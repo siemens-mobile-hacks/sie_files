@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "ipc.h"
-#include "file.h"
+#include "files.h"
 #include "menu_options.h"
 
 #define MAIN_CSM_NAME "Файлы"
@@ -366,7 +366,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
         IPC_REQ *ipc = (IPC_REQ *)msg->data0;
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
             switch (msg->submess) {
-                case IPC_REFRESH:
+                case IPC_REDRAW:
                     ChangeDir(csm->main_gui, ".");
                     DirectRedrawGUI();
                     break;

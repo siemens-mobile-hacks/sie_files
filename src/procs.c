@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "ipc.h"
-#include "file.h"
+#include "files.h"
 #include "menu_set_as.h"
 #include "menu_options.h"
 
@@ -48,7 +48,7 @@ void DeleteFiles(const files_list_t *files) {
         mfree(path);
         p = p->next;
     }
-    ipc_refresh();
+    ipc_redraw();
 
     CloseMenuOptionsGUI();
 }

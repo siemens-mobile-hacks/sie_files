@@ -1,7 +1,7 @@
 #ifndef __PROCS_H__
 #define __PROCS_H__
 
-#include "file.h"
+#include "files.h"
 
 void CreateDiskInfoGUI();
 void CreateDir();

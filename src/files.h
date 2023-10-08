@@ -1,5 +1,5 @@
-#ifndef __FILE_H__
-#define __FILE_H__
+#ifndef __FILES_H__
+#define __FILES_H__
 
 #include <sie/sie.h>
 

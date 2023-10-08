@@ -1,7 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "file.h"
+#include "files.h"
 #include "menu.h"
 #include "procs.h"
 
