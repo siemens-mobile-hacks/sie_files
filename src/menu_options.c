@@ -20,6 +20,20 @@ extern file_t CURRENT_FILE;
 
 int MENU_OPTIONS_GUI_ID;
 
+void Delete(void) {
+    void callback(int flag) {
+        if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
+            files_list_t *files = InitFilesListFromCurrentFile();
+            DeleteFiles(files);
+            DestroyFilesList(files);
+        }
+    }
+    WSHDR *ws = AllocWS(32);
+    wsprintf(ws, "%t", "Удалить?");
+    Sie_GUI_MsgBoxYesNo(ws, callback);
+    FreeWS(ws);
+}
+
 /**********************************************************************************************************************/
 
 static void OnRedraw(MAIN_GUI *data) {
@@ -50,7 +64,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         else { // каталог
 
         }
-        M_AddMenuItem("Удалить", DeleteCurrentFile);
+        M_AddMenuItem("Удалить", Delete);
     } else { // пустота :-)
         M_AddMenuItem("Создать папку", CreateDir);
     }

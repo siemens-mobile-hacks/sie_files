@@ -10,4 +10,14 @@ typedef struct {
 
 typedef _FILE file_t;
 
+typedef struct {
+    file_t *file;
+    void *next;
+} _FILES;
+
+typedef _FILES files_list_t;
+
+files_list_t *InitFilesListFromCurrentFile();
+void DestroyFilesList(files_list_t *files);
+
 #endif

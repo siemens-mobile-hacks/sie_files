@@ -35,15 +35,20 @@ void SetAsWallpaper() {
 
 /**********************************************************************************************************************/
 
-void DeleteCurrentFile() {
-    CloseMenuOptionsGUI();
-
+void DeleteFiles(const files_list_t *files) {
     unsigned int err;
-    const size_t len1 = strlen(CURRENT_FILE.dir);
-    const size_t len2 = strlen(CURRENT_FILE.sie_file->file_name);
-    char *path = malloc(len1 + len2 + 1);
-    sprintf(path, "%s%s", CURRENT_FILE.dir, CURRENT_FILE.sie_file->file_name);
-    _unlink(path, &err);
+    files_list_t *p = (files_list_t*)files;
+    while (p != NULL) {
+        const file_t *file = p->file;
+        const size_t len1 = strlen(file->dir);
+        const size_t len2 = strlen(file->sie_file->file_name);
+        char *path = malloc(len1 + len2 + 1);
+        sprintf(path, "%s%s", file->dir, file->sie_file->file_name);
+        _unlink(path, &err);
+        mfree(path);
+        p = p->next;
+    }
     ipc_refresh();
-    mfree(path);
+
+    CloseMenuOptionsGUI();
 }
