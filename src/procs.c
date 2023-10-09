@@ -16,7 +16,7 @@ void CreateDiskInfoGUI() {
 }
 
 void CreateFile() {
-    CreateMenuNewFileGUI();
+    ShowMSG(1, (int)"Create file");
 }
 
 void CreateDir() {

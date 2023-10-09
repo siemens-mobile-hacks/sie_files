@@ -9,8 +9,12 @@ SIE_MENU_LIST *InitMenu(const char **names, void (**procs)(void), unsigned int c
         zeromem(item, sizeof(SIE_MENU_LIST_ITEM));
 
         size_t len = strlen(names[i]);
-        item->ws = AllocWS((int)(len + 1));
-        wsprintf(item->ws, "%t", names[i]);
+        item->ws = AllocWS(len);
+        if (names[i][0] >= 65) { // cp1251
+            wsprintf(item->ws, "%t", names[i]);
+        } else { // file_name
+            str_2ws(item->ws, names[0], len);
+        }
         item->proc = procs[i];
     }
     SIE_MENU_LIST *menu = NULL;

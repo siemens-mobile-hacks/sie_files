@@ -1,10 +1,8 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "files.h"
 #include "menu.h"
 #include "procs.h"
-#include "menu_new_file.h"
 
 typedef struct {
     GUI gui;
@@ -15,29 +13,9 @@ typedef struct {
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
-/**********************************************************************************************************************/
-
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
-
-extern file_t CURRENT_FILE;
 extern const char *DIR_TEMPLATES;
-
-void Delete(void) {
-    void callback(int flag) {
-        if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            files_list_t *files = InitFilesListFromCurrentFile();
-            DeleteFiles(files);
-            DestroyFilesList(files);
-        }
-    }
-    WSHDR *ws = AllocWS(32);
-    wsprintf(ws, "%t", "Удалить?");
-    Sie_GUI_MsgBoxYesNo(ws, callback);
-    FreeWS(ws);
-}
-
-/**********************************************************************************************************************/
 
 static void OnRedraw(MAIN_GUI *data) {
     Sie_GUI_Surface_Draw(data->surface);
@@ -51,32 +29,16 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     void (**procs)(void) = NULL;
     unsigned int count = 0;
 
-    if (!strlen(CURRENT_FILE.dir)) { // диски
-        M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
-    } else if (CURRENT_FILE.sie_file) { // каталог или файл
-        char mask[64];
-        sprintf(mask, "%s*", DIR_TEMPLATES);
-        SIE_FILE *templates = Sie_FS_FindFiles(mask);
-        M_AddMenuItem("Новый каталог", CreateDir);
-        if (templates) {
-            M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
-            Sie_FS_DestroyFiles(templates);
+    char mask[64];
+    sprintf(mask, "%s*", DIR_TEMPLATES);
+    SIE_FILE *templates = Sie_FS_FindFiles(mask);
+    if (templates) {
+        SIE_FILE *p = templates;
+        while (p) {
+            M_AddMenuItem(p->file_name, CreateFile);
+            p = p->next;
         }
-        if (!(CURRENT_FILE.sie_file->file_attr & FA_DIRECTORY)) { // файл
-            char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE.sie_file->file_name);
-            if (ext) {
-                if (strcmpi(ext, "png") == 0) {
-                    M_AddMenuItem("Задать как...", SetAs);
-                }
-                mfree(ext);
-            }
-        }
-        else { // каталог
-
-        }
-        M_AddMenuItem("Удалить", Delete);
-    } else { // пустота :-)
-        M_AddMenuItem("Создать папку", CreateDir);
+        Sie_FS_DestroyFiles(templates);
     }
     data->menu = M_InitMenu();
     M_DestroyMenuItems();
@@ -86,7 +48,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-    wsprintf(data->surface->hdr_ws, "%t", "Опции");
+    wsprintf(data->surface->hdr_ws, "%t", "Новый файл");
 }
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
@@ -142,7 +104,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuOptionsGUI() {
+void CreateMenuNewFileGUI() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
