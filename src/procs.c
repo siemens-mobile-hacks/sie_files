@@ -5,15 +5,18 @@
 #include "files.h"
 #include "menu_set_as.h"
 #include "menu_options.h"
+#include "menu_new_file.h"
 
 extern file_t CURRENT_FILE;
+extern SIE_GUI_STACK *GUI_STACK;
+extern unsigned int MAIN_GUI_ID;
 
 void CreateDiskInfoGUI() {
     ShowMSG(1, (int)"Create disk info gui");
 }
 
 void CreateFile() {
-    ShowMSG(1, (int)"Create file");
+    CreateMenuNewFileGUI();
 }
 
 void CreateDir() {
@@ -33,8 +36,7 @@ void SetAsWallpaper() {
     wsprintf(ws, "%s%s", CURRENT_FILE.dir, CURRENT_FILE.sie_file->file_name);
     Sie_Resources_SetWallpaper(ws);
     FreeWS(ws);
-    CloseMenuOptionsGUI();
-    CloseMenuSetAsGUI();
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
 }
 
 /**********************************************************************************************************************/
@@ -52,7 +54,6 @@ void DeleteFiles(const files_list_t *files) {
         mfree(path);
         p = p->next;
     }
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
     ipc_redraw();
-
-    CloseMenuOptionsGUI();
 }

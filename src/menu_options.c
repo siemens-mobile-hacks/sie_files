@@ -7,6 +7,7 @@
 
 typedef struct {
     GUI gui;
+    unsigned int gui_id;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
     SIE_FILE *templates;
@@ -17,10 +18,10 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 /**********************************************************************************************************************/
 
 extern RECT canvas;
+extern SIE_GUI_STACK *GUI_STACK;
+
 extern file_t CURRENT_FILE;
 extern const char *DIR_TEMPLATES;
-
-int MENU_OPTIONS_GUI_ID;
 
 void Delete(void) {
     void callback(int flag) {
@@ -92,7 +93,7 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     Sie_FS_DestroyFiles(data->templates);
     DestroyMenu(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
-    MENU_OPTIONS_GUI_ID = 0;
+    GUI_STACK = Sie_GUI_Stack_Pop(GUI_STACK, data->gui_id);
 }
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
@@ -148,12 +149,7 @@ void CreateMenuOptionsGUI() {
     main_gui->gui.canvas = (RECT*)(&canvas);
     main_gui->gui.methods = (void*)gui_methods;
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
-    MENU_OPTIONS_GUI_ID = CreateGUI(main_gui);
+    main_gui->gui_id = CreateGUI(main_gui);
+    GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->gui_id);
     UnlockSched();
-}
-
-void CloseMenuOptionsGUI() {
-    if (MENU_OPTIONS_GUI_ID) {
-        GeneralFunc_flag1(MENU_OPTIONS_GUI_ID, 0);
-    }
 }

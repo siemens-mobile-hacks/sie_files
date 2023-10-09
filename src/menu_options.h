@@ -2,6 +2,5 @@
 #define __MENU_OPTIONS_H__
 
 void CreateMenuOptionsGUI();
-void CloseMenuOptionsGUI();
 
 #endif

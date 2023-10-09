@@ -6,6 +6,7 @@
 
 typedef struct {
     GUI gui;
+    unsigned int gui_id;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
@@ -15,8 +16,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 /**********************************************************************************************************************/
 
 extern RECT canvas;
-
-int MENU_SET_AS_GUI_ID;
+extern SIE_GUI_STACK *GUI_STACK;
 
 /**********************************************************************************************************************/
 
@@ -47,7 +47,7 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
     DestroyMenu(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
-    MENU_SET_AS_GUI_ID = 0;
+    GUI_STACK = Sie_GUI_Stack_Pop(GUI_STACK, data->gui_id);
 }
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
@@ -103,12 +103,7 @@ void CreateMenuSetAsGUI() {
     main_gui->gui.canvas = (RECT*)(&canvas);
     main_gui->gui.methods = (void*)gui_methods;
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
-    MENU_SET_AS_GUI_ID = CreateGUI(main_gui);
+    main_gui->gui_id = CreateGUI(main_gui);
+    GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->gui_id);
     UnlockSched();
-}
-
-void CloseMenuSetAsGUI() {
-    if (MENU_SET_AS_GUI_ID) {
-        GeneralFunc_flag1(MENU_SET_AS_GUI_ID, 0);
-    }
 }

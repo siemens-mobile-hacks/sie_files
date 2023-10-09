@@ -39,6 +39,8 @@ unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
 file_t CURRENT_FILE;
+unsigned int MAIN_GUI_ID;
+SIE_GUI_STACK *GUI_STACK;
 
 const char *DIR_ROOT = "0:\\zbin\\usr\\sie_files\\";
 const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
@@ -346,8 +348,9 @@ static void maincsm_oncreate(CSM_RAM *data) {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     csm->csm.state = 0;
     csm->csm.unk1 = 0;
-    csm->gui_id = CreateGUI(main_gui);
+    MAIN_GUI_ID = csm->gui_id = CreateGUI(main_gui);
     csm->main_gui = main_gui;
+    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), csm->gui_id);
 }
 
 void KillElf() {
