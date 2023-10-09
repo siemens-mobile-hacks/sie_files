@@ -241,7 +241,6 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
     data->gui.state = 2;
     Sie_GUI_Surface_OnFocus(data->surface);
-    DisableIDLETMR();
 }
 
 static void OnUnfocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
@@ -278,6 +277,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                             sprintf(path, "%s%s\\", data->path_list_last->dir, file->file_name);
                             //data->path_list_last->row = data->menu->row;
                             ChangeDir(data, path);
+                            Sie_GUI_Surface_Draw(data->surface);
                             Sie_Menu_List_Draw(data->menu);
                         } else {
                             WSHDR *ws = AllocWS(12);
@@ -302,6 +302,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     return 1;
                 } else {
                     ChangeDir(data, "..");
+                    Sie_GUI_Surface_Draw(data->surface);
                     Sie_Menu_List_Draw(data->menu);
                 }
                 break;
@@ -321,16 +322,16 @@ static int method8(void) { return 0; }
 static int method9(void) { return 0; }
 
 const void *const gui_methods[11] = {
-        (void *)OnRedraw,
-        (void *)OnCreate,
-        (void *)OnClose,
-        (void *)OnFocus,
-        (void *)OnUnfocus,
-        (void *)OnKey,
+        (void*)OnRedraw,
+        (void*)OnCreate,
+        (void*)OnClose,
+        (void*)OnFocus,
+        (void*)OnUnfocus,
+        (void*)OnKey,
         0,
-        (void *)kill_data,
-        (void *)method8,
-        (void *)method9,
+        (void*)kill_data,
+        (void*)method8,
+        (void*)method9,
         0
 };
 
@@ -358,12 +359,12 @@ static void maincsm_onclose(CSM_RAM *csm) {
 }
 
 static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
-    MAIN_CSM *csm = (MAIN_CSM *)data;
+    MAIN_CSM *csm = (MAIN_CSM*)data;
     if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->gui_id)) {
         csm->csm.state = -3;
     }
     else if (msg->msg == MSG_IPC) {
-        IPC_REQ *ipc = (IPC_REQ *)msg->data0;
+        IPC_REQ *ipc = (IPC_REQ*)msg->data0;
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
             switch (msg->submess) {
                 case IPC_REDRAW:

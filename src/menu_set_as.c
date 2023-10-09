@@ -83,16 +83,16 @@ static int method8(void) { return 0; }
 static int method9(void) { return 0; }
 
 static const void *const gui_methods[11] = {
-        (void *)OnRedraw,
-        (void *)OnCreate,
-        (void *)OnClose,
-        (void *)OnFocus,
-        (void *)OnUnfocus,
-        (void *)OnKey,
+        (void*)OnRedraw,
+        (void*)OnCreate,
+        (void*)OnClose,
+        (void*)OnFocus,
+        (void*)OnUnfocus,
+        (void*)OnKey,
         0,
-        (void *)kill_data,
-        (void *)method8,
-        (void *)method9,
+        (void*)kill_data,
+        (void*)method8,
+        (void*)method9,
         0
 };
 
@@ -100,8 +100,8 @@ void CreateMenuSetAsGUI() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
-    main_gui->gui.canvas = (RECT *)(&canvas);
-    main_gui->gui.methods = (void *)gui_methods;
+    main_gui->gui.canvas = (RECT*)(&canvas);
+    main_gui->gui.methods = (void*)gui_methods;
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     MENU_SET_AS_GUI_ID = CreateGUI(main_gui);
     UnlockSched();
