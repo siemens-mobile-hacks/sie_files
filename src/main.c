@@ -42,6 +42,7 @@ file_t CURRENT_FILE;
 
 const char *DIR_ROOT = "0:\\zbin\\usr\\sie_files\\";
 const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
+const char *DIR_TEMPLATES = "0:\\Templates\\";
 
 /**********************************************************************************************************************/
 

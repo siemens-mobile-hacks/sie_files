@@ -4,7 +4,9 @@
 #include "files.h"
 
 void CreateDiskInfoGUI();
+void CreateFile();
 void CreateDir();
+
 void SetAs();
 void SetAsWallpaper();
 void DeleteFiles(const files_list_t *files);

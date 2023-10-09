@@ -12,6 +12,10 @@ void CreateDiskInfoGUI() {
     ShowMSG(1, (int)"Create disk info gui");
 }
 
+void CreateFile() {
+    ShowMSG(1, (int)"Create file");
+}
+
 void CreateDir() {
     ShowMSG(1, (int)"Create directory");
 }

@@ -9,6 +9,7 @@ typedef struct {
     GUI gui;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
+    SIE_FILE *templates;
 } MAIN_GUI;
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
@@ -17,6 +18,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern file_t CURRENT_FILE;
+extern const char *DIR_TEMPLATES;
 
 int MENU_OPTIONS_GUI_ID;
 
@@ -51,7 +53,13 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     if (!strlen(CURRENT_FILE.dir)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
     } else if (CURRENT_FILE.sie_file) { // каталог или файл
+        char mask[64];
+        sprintf(mask, "%s*", DIR_TEMPLATES);
+        data->templates = Sie_FS_FindFiles(mask);
         M_AddMenuItem("Создать папку", CreateDir);
+        if (data->templates) {
+            M_AddMenuItem("Создать файл", CreateFile);
+        }
         if (!(CURRENT_FILE.sie_file->file_attr & FA_DIRECTORY)) { // файл
             char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE.sie_file->file_name);
             if (ext) {
@@ -81,6 +89,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
+    Sie_FS_DestroyFiles(data->templates);
     DestroyMenu(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
     MENU_OPTIONS_GUI_ID = 0;
