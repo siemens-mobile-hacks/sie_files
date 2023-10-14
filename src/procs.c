@@ -46,11 +46,12 @@ void DeleteFiles(const files_list_t *files) {
     files_list_t *p = (files_list_t*)files;
     while (p != NULL) {
         const file_t *file = p->file;
-        const size_t len1 = strlen(file->dir);
-        const size_t len2 = strlen(file->sie_file->file_name);
-        char *path = malloc(len1 + len2 + 1);
-        sprintf(path, "%s%s", file->dir, file->sie_file->file_name);
-        _unlink(path, &err);
+        char *path = Sie_FS_GetPathByFile(file->sie_file);
+        if (file->sie_file->file_attr & FA_DIRECTORY) {
+            Sie_FS_RemoveDirRecursive(path);
+        } else {
+            _unlink(path, &err);
+        }
         mfree(path);
         p = p->next;
     }
