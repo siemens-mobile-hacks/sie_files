@@ -293,7 +293,6 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 }
                 break;
             case LEFT_SOFT:
-                CURRENT_FILE.dir = data->path_list_last->dir;
                 CURRENT_FILE.sie_file = Sie_FS_GetFileByID(data->files, data->menu->row);
                 CreateMenuOptionsGUI();
                 break;

@@ -51,7 +51,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     void (**procs)(void) = NULL;
     unsigned int count = 0;
 
-    if (!strlen(CURRENT_FILE.dir)) { // диски
+    if (!strlen(CURRENT_FILE.sie_file->dir_name)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
     } else if (CURRENT_FILE.sie_file) { // каталог или файл
         char mask[64];

@@ -30,10 +30,10 @@ void SetAs() {
 }
 
 void SetAsWallpaper() {
-    const size_t len1 = strlen(CURRENT_FILE.dir);
+    const size_t len1 = strlen(CURRENT_FILE.sie_file->dir_name);
     const size_t len2 = strlen(CURRENT_FILE.sie_file->file_name);
     WSHDR *ws = AllocWS((int)(len1 + len2 + 1));
-    wsprintf(ws, "%s%s", CURRENT_FILE.dir, CURRENT_FILE.sie_file->file_name);
+    wsprintf(ws, "%s%s", CURRENT_FILE.sie_file->dir_name, CURRENT_FILE.sie_file->file_name);
     Sie_Resources_SetWallpaper(ws);
     FreeWS(ws);
     GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);

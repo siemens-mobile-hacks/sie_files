@@ -4,8 +4,7 @@
 #include <sie/sie.h>
 
 typedef struct {
-    const char *dir;
-    const SIE_FILE *sie_file;
+    SIE_FILE *sie_file;
 } _FILE;
 
 typedef _FILE file_t;
