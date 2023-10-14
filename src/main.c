@@ -107,20 +107,17 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         SIE_RESOURCES_EXT *res_ext = NULL;
         size_t len = strlen(file->file_name);
         if (file->file_attr & FA_DIRECTORY) {
-            res_ext = Sie_Resources_ExtLoad("folder.png", "_");
+            res_ext = Sie_Resources_LoadImage("places", "folder", 24);
         } else {
             char *ext = Sie_Strings_GetExtByFileName(file->file_name);
             if (ext) {
-                char *file_name = malloc(strlen(ext) + 3 + 1);
-                sprintf(file_name, "%s.png", ext);
-                res_ext = Sie_Resources_ExtLoad(file_name, ext);
-                mfree(file_name);
+                res_ext = Sie_Resources_LoadImage("ext", ext, 24);
                 if (!res_ext) {
-                    res_ext = Sie_Resources_ExtLoad("unk.png", "unk");
+                    res_ext = Sie_Resources_LoadImage("ext", "unknown", 24);
                 }
                 mfree(ext);
             } else {
-                res_ext = Sie_Resources_ExtLoad("unk.png", "unk");
+                res_ext = Sie_Resources_LoadImage("ext", "unk.png", 24);
             }
         }
         if (res_ext) {
