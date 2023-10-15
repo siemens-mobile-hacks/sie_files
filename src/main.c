@@ -16,7 +16,6 @@ typedef struct {
 
 typedef struct {
     GUI gui;
-    IMGHDR *img_disk;
     PATH_LIST *path_list_last;
     SIE_FILE *files;
     SIE_MENU_LIST *menu;
@@ -84,8 +83,11 @@ SIE_MENU_LIST_ITEM *InitRootItems(MAIN_GUI *data, unsigned int *count) {
     const char *names[] = {"Data", "Cache", "Config"};
     SIE_MENU_LIST_ITEM *items = malloc(sizeof(SIE_MENU_LIST_ITEM) * c);
     zeromem(items, (int)(sizeof(SIE_MENU_LIST_ITEM) * c));
+    SIE_RESOURCES_EXT *res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "drive");
     for (int i = 0; i < c; i++) {
-        items[i].icon = data->img_disk;
+        if (res_ext) {
+            items[i].icon = res_ext->icon;
+        }
         items[i].ws = AllocWS(32);
         wsprintf(items[i].ws, "%s", names[i]);
     }
@@ -107,17 +109,17 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         SIE_RESOURCES_EXT *res_ext = NULL;
         size_t len = strlen(file->file_name);
         if (file->file_attr & FA_DIRECTORY) {
-            res_ext = Sie_Resources_LoadImage("places", "folder", 24);
+            res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
             char *ext = Sie_Strings_GetExtByFileName(file->file_name);
             if (ext) {
-                res_ext = Sie_Resources_LoadImage("ext", ext, 24);
+                res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, ext);
                 if (!res_ext) {
-                    res_ext = Sie_Resources_LoadImage("ext", "unknown", 24);
+                    res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
                 }
                 mfree(ext);
             } else {
-                res_ext = Sie_Resources_LoadImage("ext", "unk.png", 24);
+                res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
             }
         }
         if (res_ext) {
@@ -195,10 +197,6 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     Sie_FT_Init();
     Sie_Resources_Init();
 
-    char *path = malloc(strlen(DIR_IMG) + 8 + 1);
-    sprintf(path, "%s%s", DIR_IMG, "disk.png");
-    data->img_disk = CreateIMGHDRFromPngFile(path, 0);
-    mfree(path);
     data->path_list_last = malloc(sizeof(PATH_LIST));
     zeromem(data->path_list_last, sizeof(PATH_LIST));
     strcpy(data->path_list_last->dir, "");
@@ -229,11 +227,6 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
         mfree(data->path_list_last);
         data->path_list_last = prev;
     }
-    if (data->img_disk) {
-        mfree(data->img_disk->bitmap);
-        mfree(data->img_disk);
-    }
-
     Sie_FT_Destroy();
     Sie_Resources_Destroy();
 }
