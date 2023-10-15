@@ -140,6 +140,8 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
 void UpdateHeader(MAIN_GUI *data) {
     if (data->menu->n_items) {
         wsprintf(data->surface->hdr_ws, "\t%d/%d", data->menu->row + 1, data->menu->n_items);
+    } else {
+        wsprintf(data->surface->hdr_ws, "");
     }
 }
 
