@@ -7,8 +7,9 @@
 #include "menu_new_file.h"
 
 extern SIE_FILE *CURRENT_FILE;
-extern SIE_GUI_STACK *GUI_STACK;
+extern SIE_FILE *COPY_FILE;
 extern unsigned int MAIN_GUI_ID;
+extern SIE_GUI_STACK *GUI_STACK;
 
 void CreateDiskInfoGUI() {
     ShowMSG(1, (int)"Create disk info gui");
@@ -20,6 +21,61 @@ void CreateFile() {
 
 void CreateDir() {
     ShowMSG(1, (int)"Create directory");
+}
+
+void CopyFile() {
+    COPY_FILE = Sie_FS_CopyFileElement(CURRENT_FILE);
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
+}
+
+void Paste() {
+    char *dir_name = CURRENT_FILE->dir_name;
+    size_t len_dir_name = strlen(dir_name);
+
+    if (COPY_FILE) {
+        SIE_FILE *p = COPY_FILE;
+        unsigned int i_exists = 0;
+        while (p) {
+            char *dest_file_name = malloc(strlen(p->file_name) + 32 + 1);
+            if (!i_exists) {
+                strcpy(dest_file_name, p->file_name);
+            } else {
+                char s[8], *ext;
+                sprintf(s, "(%d)", i_exists);
+                ext = strrchr(p->file_name, '.');
+                if (ext) {
+                    strncpy(dest_file_name, p->file_name, ext - p->file_name);
+                    dest_file_name[ext - p->file_name] = '\0';
+                    strcat(dest_file_name, s);
+                    strcat(dest_file_name, ext);
+                } else {
+                    strcpy(dest_file_name, p->file_name);
+                    strcat(dest_file_name, s);
+                }
+            }
+
+            char *src = Sie_FS_GetPathByFile(p);
+            char *dest = malloc(len_dir_name + strlen(dest_file_name) + 1);
+            sprintf(dest, "%s%s", CURRENT_FILE->dir_name, dest_file_name);
+            if (Sie_FS_FileExists(dest)) {
+                i_exists += 1;
+                mfree(src);
+                mfree(dest);
+                continue;
+            } else {
+                Sie_FS_CopyFile(dest, src);
+                mfree(src);
+                mfree(dest);
+                i_exists = 0;
+            }
+            p = p->next;
+        }
+        Sie_FS_DestroyFiles(COPY_FILE);
+        COPY_FILE = NULL;
+    }
+
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
+    ipc_redraw();
 }
 
 /**********************************************************************************************************************/

@@ -37,6 +37,7 @@ unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
 SIE_FILE *CURRENT_FILE;
+SIE_FILE *COPY_FILE;
 unsigned int MAIN_GUI_ID;
 SIE_GUI_STACK *GUI_STACK;
 

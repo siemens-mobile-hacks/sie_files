@@ -17,9 +17,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 /**********************************************************************************************************************/
 
 extern RECT canvas;
-extern SIE_GUI_STACK *GUI_STACK;
-
 extern SIE_FILE *CURRENT_FILE;
+extern SIE_FILE *COPY_FILE;
+extern SIE_GUI_STACK *GUI_STACK;
 extern const char *DIR_TEMPLATES;
 
 void Delete(void) {
@@ -61,7 +61,13 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
             Sie_FS_DestroyFiles(templates);
         }
+        if (COPY_FILE) {
+            M_AddMenuItem("Вставить", Paste);
+        }
         if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
+            if (!COPY_FILE) {
+                M_AddMenuItem("Копировать", CopyFile);
+            }
             char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE->file_name);
             if (ext) {
                 if (strcmpi(ext, "png") == 0) {
