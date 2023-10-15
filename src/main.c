@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "ipc.h"
-#include "files.h"
 #include "menu_options.h"
 
 #define MAIN_CSM_NAME "Файлы"
@@ -37,7 +36,7 @@ const int minus11 = -11;
 unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
-file_t CURRENT_FILE;
+SIE_FILE *CURRENT_FILE;
 unsigned int MAIN_GUI_ID;
 SIE_GUI_STACK *GUI_STACK;
 
@@ -58,6 +57,8 @@ SIE_FILE *InitRootFiles() {
         current = malloc(sizeof(SIE_FILE));
         zeromem(current, sizeof(SIE_FILE));
 
+        current->dir_name = malloc(1);
+        current->dir_name[0] = '\0';
         len = strlen(names[i]);
         current->file_name = malloc(len + 1);
         strcpy(current->file_name, names[i]);
@@ -286,7 +287,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 }
                 break;
             case LEFT_SOFT:
-                CURRENT_FILE.sie_file = Sie_FS_GetFileByID(data->files, data->menu->row);
+                CURRENT_FILE = Sie_FS_GetFileByID(data->files, data->menu->row);
                 CreateMenuOptionsGUI();
                 break;
             case RIGHT_SOFT:

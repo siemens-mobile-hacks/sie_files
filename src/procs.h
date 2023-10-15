@@ -1,14 +1,12 @@
 #ifndef __PROCS_H__
 #define __PROCS_H__
 
-#include "files.h"
-
 void CreateDiskInfoGUI();
 void CreateFile();
 void CreateDir();
 
 void SetAs();
 void SetAsWallpaper();
-void DeleteFiles(const files_list_t *files);
+void DeleteFiles(const SIE_FILE *files);
 
 #endif

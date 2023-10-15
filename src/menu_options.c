@@ -1,7 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "files.h"
 #include "menu.h"
 #include "procs.h"
 #include "menu_new_file.h"
@@ -20,15 +19,15 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
 
-extern file_t CURRENT_FILE;
+extern SIE_FILE *CURRENT_FILE;
 extern const char *DIR_TEMPLATES;
 
 void Delete(void) {
     void callback(int flag) {
         if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            files_list_t *files = InitFilesListFromCurrentFile();
+            SIE_FILE *files = Sie_FS_CopyFileElement(CURRENT_FILE);
             DeleteFiles(files);
-            DestroyFilesList(files);
+            Sie_FS_DestroyFiles(files);
         }
     }
     WSHDR *ws = AllocWS(32);
@@ -51,9 +50,9 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     void (**procs)(void) = NULL;
     unsigned int count = 0;
 
-    if (!strlen(CURRENT_FILE.sie_file->dir_name)) { // диски
+    if (!strlen(CURRENT_FILE->dir_name)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
-    } else if (CURRENT_FILE.sie_file) { // каталог или файл
+    } else if (CURRENT_FILE) { // каталог или файл
         char mask[64];
         sprintf(mask, "%s*", DIR_TEMPLATES);
         SIE_FILE *templates = Sie_FS_FindFiles(mask);
@@ -62,8 +61,8 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
             Sie_FS_DestroyFiles(templates);
         }
-        if (!(CURRENT_FILE.sie_file->file_attr & FA_DIRECTORY)) { // файл
-            char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE.sie_file->file_name);
+        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
+            char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE->file_name);
             if (ext) {
                 if (strcmpi(ext, "png") == 0) {
                     M_AddMenuItem("Задать как...", SetAs);
