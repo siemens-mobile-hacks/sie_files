@@ -51,7 +51,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     unsigned int count = 0;
 
     void AddPasteItem(void) {
-        if (COPY_FILES || (MOVE_FILES && strcmp(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
+        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
             M_AddMenuItem("Вставить", Paste);
         }
     }
