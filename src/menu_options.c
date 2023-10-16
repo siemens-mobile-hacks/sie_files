@@ -3,6 +3,7 @@
 #include <sie/sie.h>
 #include "menu.h"
 #include "procs.h"
+#include "path_stack.h"
 #include "menu_new_file.h"
 
 typedef struct {
@@ -18,7 +19,8 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *COPY_FILE;
+extern SIE_FILE *COPY_FILES, *MOVE_FILES;
+extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
 extern const char *DIR_TEMPLATES;
 
@@ -44,13 +46,17 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    data->gui.state = 1;
-
     char **names = NULL;
     void (**procs)(void) = NULL;
     unsigned int count = 0;
 
-    if (!strlen(CURRENT_FILE->dir_name)) { // диски
+    void AddPasteItem(void) {
+        if (COPY_FILES || (MOVE_FILES && strcmp(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
+            M_AddMenuItem("Вставить", Paste);
+        }
+    }
+
+        if (!strlen(PATH_STACK->dir_name)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
     } else if (CURRENT_FILE) { // каталог или файл
         char mask[64];
@@ -61,12 +67,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
             Sie_FS_DestroyFiles(templates);
         }
-        if (COPY_FILE) {
-            M_AddMenuItem("Вставить", Paste);
-        }
+        AddPasteItem();
         if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
-            if (!COPY_FILE) {
+            if (!COPY_FILES && !MOVE_FILES) {
                 M_AddMenuItem("Копировать", CopyFile);
+                M_AddMenuItem("Переместить", MoveFile);
             }
             char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE->file_name);
             if (ext) {
@@ -77,11 +82,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             }
         }
         else { // каталог
-
         }
         M_AddMenuItem("Удалить", Delete);
     } else { // пустота :-)
         M_AddMenuItem("Создать папку", CreateDir);
+        AddPasteItem();
     }
     data->menu = M_InitMenu();
     M_DestroyMenuItems();
@@ -92,6 +97,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     wsprintf(data->surface->hdr_ws, "%t", "Опции");
+    data->gui.state = 1;
 }
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {

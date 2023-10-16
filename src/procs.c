@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "ipc.h"
+#include "path_stack.h"
 #include "menu_set_as.h"
-#include "menu_options.h"
-#include "menu_new_file.h"
 
 extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *COPY_FILE;
+extern SIE_FILE *COPY_FILES, *MOVE_FILES;
+extern path_stack_t *PATH_STACK;
 extern unsigned int MAIN_GUI_ID;
 extern SIE_GUI_STACK *GUI_STACK;
 
@@ -24,16 +24,20 @@ void CreateDir() {
 }
 
 void CopyFile() {
-    COPY_FILE = Sie_FS_CopyFileElement(CURRENT_FILE);
+    COPY_FILES = Sie_FS_CopyFileElement(CURRENT_FILE);
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
+}
+
+void MoveFile() {
+    MOVE_FILES = Sie_FS_CopyFileElement(CURRENT_FILE);
     GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
 }
 
 void Paste() {
-    char *dir_name = CURRENT_FILE->dir_name;
+    char *dir_name = PATH_STACK->dir_name;
     size_t len_dir_name = strlen(dir_name);
-
-    if (COPY_FILE) {
-        SIE_FILE *p = COPY_FILE;
+    SIE_FILE *p = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
+    if (p) {
         unsigned int i_exists = 0;
         while (p) {
             char *dest_file_name = malloc(strlen(p->file_name) + 32 + 1);
@@ -53,27 +57,35 @@ void Paste() {
                     strcat(dest_file_name, s);
                 }
             }
-
             char *src = Sie_FS_GetPathByFile(p);
             char *dest = malloc(len_dir_name + strlen(dest_file_name) + 1);
-            sprintf(dest, "%s%s", CURRENT_FILE->dir_name, dest_file_name);
+            sprintf(dest, "%s%s", dir_name, dest_file_name);
             if (Sie_FS_FileExists(dest)) {
                 i_exists += 1;
                 mfree(src);
                 mfree(dest);
                 continue;
             } else {
-                Sie_FS_CopyFile(dest, src);
+                unsigned int err;
+                if (COPY_FILES) {
+                    Sie_FS_CopyFile(src, dest);
+                } else {
+                    fmove(src, dest, &err);
+                }
                 mfree(src);
                 mfree(dest);
                 i_exists = 0;
             }
             p = p->next;
         }
-        Sie_FS_DestroyFiles(COPY_FILE);
-        COPY_FILE = NULL;
+        if (COPY_FILES) {
+            Sie_FS_DestroyFiles(COPY_FILES);
+            COPY_FILES = NULL;
+        } else {
+            Sie_FS_DestroyFiles(MOVE_FILES);
+            MOVE_FILES = NULL;
+        }
     }
-
     GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
     ipc_redraw();
 }

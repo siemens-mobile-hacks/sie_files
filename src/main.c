@@ -2,20 +2,13 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "ipc.h"
+#include "path_stack.h"
 #include "menu_options.h"
 
 #define MAIN_CSM_NAME "Файлы"
 
 typedef struct {
-    char dir[1024];
-    unsigned int row;
-    void *next;
-    void *prev;
-} PATH_LIST;
-
-typedef struct {
     GUI gui;
-    PATH_LIST *path_list_last;
     SIE_FILE *files;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
@@ -37,7 +30,8 @@ unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
 SIE_FILE *CURRENT_FILE;
-SIE_FILE *COPY_FILE;
+SIE_FILE *COPY_FILES, *MOVE_FILES;
+path_stack_t *PATH_STACK;
 unsigned int MAIN_GUI_ID;
 SIE_GUI_STACK *GUI_STACK;
 
@@ -151,32 +145,25 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_Menu_List_Destroy(data->menu);
     data->menu = Sie_Menu_List_Init(NULL, 0);
 
-    PATH_LIST *p = NULL;
-    if (strcmp(path, ".") == 0) { // обновление
-        p = data->path_list_last;
-    } else if (strcmp(path, "..") == 0) { // назад
-        p = data->path_list_last->prev;
-        mfree(data->path_list_last);
-        p->next = NULL;
-        data->path_list_last = p;
-    } else { // вход в новую директорию
-        p = malloc(sizeof(PATH_LIST));
-        zeromem(p, sizeof(PATH_LIST));
-        strcpy(p->dir, path);
-        data->path_list_last->next = p;
-        p->prev = data->path_list_last;
-        p->next = NULL;
-        data->path_list_last = p;
+    path_stack_t *p = NULL;
+    if (strcmp(path, ".") == 0) { // update
+        p = PATH_STACK;
+    } else if (strcmp(path, "..") == 0) { // back
+        p = PathStack_Pop(PATH_STACK);
+        PATH_STACK = p;
+    } else { // enter new dir
+        p = PathStack_Add(PATH_STACK, path);
+        PATH_STACK = p;
     }
 
-    if (!strlen(p->dir)) { // корень
+    if (!strlen(p->dir_name)) { // root
         data->files = InitRootFiles();
         data->menu->items = InitRootItems(data, &(data->menu->n_items));
         data->menu->row = p->row;
     } else {
         char *mask = NULL;
-        mask = malloc(strlen(p->dir) + 1 + 1);
-        sprintf(mask, "%s*", p->dir);
+        mask = malloc(strlen(p->dir_name) + 1 + 1);
+        sprintf(mask, "%s*", p->dir_name);
         data->files = Sie_FS_FindFiles(mask);
         data->files = Sie_FS_SortFilesByName(data->files, 1);
         data->menu->items = InitItems(data->files, &(data->menu->n_items));
@@ -200,10 +187,8 @@ static void OnRedraw(MAIN_GUI *data) {
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     Sie_FT_Init();
     Sie_Resources_Init();
+    PATH_STACK = InitPathStack();
 
-    data->path_list_last = malloc(sizeof(PATH_LIST));
-    zeromem(data->path_list_last, sizeof(PATH_LIST));
-    strcpy(data->path_list_last->dir, "");
     unsigned int n_items;
     data->files = InitRootFiles();
 
@@ -212,10 +197,8 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-
     SIE_MENU_LIST_ITEM *menu_items = InitRootItems(data, &n_items);
     data->menu = Sie_Menu_List_Init(menu_items, n_items);
-
     UpdateHeader(data);
 
     data->gui.state = 1;
@@ -223,14 +206,9 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
-
     Sie_FS_DestroyFiles(data->files);
     Sie_Menu_List_Destroy(data->menu);
-    while (data->path_list_last) {
-        PATH_LIST *prev = data->path_list_last->prev;
-        mfree(data->path_list_last);
-        data->path_list_last = prev;
-    }
+    DestroyPathStack(PATH_STACK);
     Sie_FT_Destroy();
     Sie_Resources_Destroy();
 }
@@ -255,14 +233,14 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
         switch (msg->gbsmsg->submess) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
-                data->path_list_last->row = data->menu->row;
+                PATH_STACK->row = data->menu->row;
                 UpdateHeader(data);
                 Sie_GUI_Surface_Draw(data->surface);
                 break;
             case SIE_MENU_LIST_KEY_ENTER:
                 if (data->menu->n_items) {
                     SIE_FILE *file = NULL;
-                    if (!strlen(data->path_list_last->dir)) { // root
+                    if (!strlen(PATH_STACK->dir_name)) { // root
                         file = Sie_FS_GetFileByID(data->files, data->menu->row);
                     } else {
                         WSHDR *ws = data->menu->items[data->menu->row].ws;
@@ -271,7 +249,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     }
                     if (file) {
                         if (file->file_attr & FA_DIRECTORY) {
-                            sprintf(path, "%s%s\\", data->path_list_last->dir, file->file_name);
+                            sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
                             //data->path_list_last->row = data->menu->row;
                             ChangeDir(data, path);
                             Sie_GUI_Surface_Draw(data->surface);
@@ -279,7 +257,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                         } else {
                             WSHDR *ws = AllocWS(12);
                             size_t len;
-                            sprintf(path, "%s%s", data->path_list_last->dir, file->file_name);
+                            sprintf(path, "%s%s", PATH_STACK->dir_name, file->file_name);
                             len = strlen(path);
                             ws = AllocWS((int)(len + 1));
                             str_2ws(ws, path, len);
@@ -294,7 +272,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 CreateMenuOptionsGUI();
                 break;
             case RIGHT_SOFT:
-                if (!strlen(data->path_list_last->dir)) { // корень
+                if (!strlen(PATH_STACK->dir_name)) { // root
                     return 1;
                 } else {
                     ChangeDir(data, "..");

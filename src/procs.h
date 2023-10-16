@@ -5,6 +5,7 @@ void CreateDiskInfoGUI();
 void CreateFile();
 void CreateDir();
 void CopyFile();
+void MoveFile();
 void Paste();
 
 void SetAs();
