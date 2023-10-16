@@ -56,7 +56,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         }
     }
 
-        if (!strlen(PATH_STACK->dir_name)) { // диски
+    if (!strlen(PATH_STACK->dir_name)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
     } else if (CURRENT_FILE) { // каталог или файл
         char mask[64];
@@ -73,12 +73,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
                 M_AddMenuItem("Копировать", CopyFile);
                 M_AddMenuItem("Переместить", MoveFile);
             }
-            char *ext = Sie_Strings_GetExtByFileName(CURRENT_FILE->file_name);
-            if (ext) {
-                if (strcmpi(ext, "png") == 0) {
+            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
+            if (uid) {
+                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
                     M_AddMenuItem("Задать как...", SetAs);
                 }
-                mfree(ext);
             }
         }
         else { // каталог

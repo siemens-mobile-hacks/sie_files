@@ -107,7 +107,7 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         if (file->file_attr & FA_DIRECTORY) {
             res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
-            char *ext = Sie_Strings_GetExtByFileName(file->file_name);
+            char *ext = Sie_Ext_GetExtByFileName(file->file_name);
             if (ext) {
                 res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, ext);
                 if (!res_ext) {
