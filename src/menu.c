@@ -13,7 +13,7 @@ SIE_MENU_LIST *InitMenu(const char **names, void (**procs)(void), unsigned int c
         if (names[i][0] >= 65) { // cp1251
             wsprintf(item->ws, "%t", names[i]);
         } else { // file_name
-            str_2ws(item->ws, names[0], len);
+            str_2ws(item->ws, names[i], len);
         }
         item->proc = procs[i];
     }
@@ -28,9 +28,9 @@ void DestroyMenu(SIE_MENU_LIST *menu) {
 
 void AddMenuItem(char ***names, void (***procs)(), unsigned int *count, const char *name, void (*proc)()) {
     unsigned int c = (*count) + 1;
-    *names = realloc(*names, sizeof(char *) * c);
-    *procs = realloc(*procs, sizeof(void *) * c);
-    (*names)[c - 1] = malloc(64);
+    *names = realloc(*names, sizeof(char*) * c);
+    *procs = realloc(*procs, sizeof(void*) * c);
+    (*names)[c - 1] = malloc(strlen(name) + 1);
     strcpy((*names)[c - 1], name);
     (*procs)[c - 1] = proc;
     *count = c;
