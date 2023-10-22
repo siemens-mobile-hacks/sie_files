@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "menu.h"
+#include "menu_new_file.h"
 #include "procs.h"
-#include "path_stack.h"
-#include "menu_create.h"
 
 typedef struct {
     GUI gui;
@@ -18,24 +17,8 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 /**********************************************************************************************************************/
 
 extern RECT canvas;
-extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *COPY_FILES, *MOVE_FILES;
-extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
-
-void Delete(void) {
-    void callback(int flag) {
-        if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            SIE_FILE *files = Sie_FS_CopyFileElement(CURRENT_FILE);
-            DeleteFiles(files);
-            Sie_FS_DestroyFiles(files);
-        }
-    }
-    WSHDR *ws = AllocWS(32);
-    wsprintf(ws, "%t", "Удалить?");
-    Sie_GUI_MsgBoxYesNo(ws, callback);
-    FreeWS(ws);
-}
+extern const char *DIR_TEMPLATES;
 
 /**********************************************************************************************************************/
 
@@ -45,40 +28,20 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
+    data->gui.state = 1;
+
     char **names = NULL;
     void (**procs)(void) = NULL;
     unsigned int count = 0;
 
-    void AddPasteItem(void) {
-        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
-            M_AddMenuItem("Вставить", Paste);
-        }
+    char mask[64];
+    sprintf(mask, "%s*", DIR_TEMPLATES);
+    SIE_FILE *templates = Sie_FS_FindFiles(mask);
+    if (templates) {
+        M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
+        Sie_FS_DestroyFiles(templates);
     }
-
-    if (!strlen(PATH_STACK->dir_name)) { // диски
-        M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
-    } else if (CURRENT_FILE) { // каталог или файл
-        M_AddMenuItem("Создать", CreateMenuCreate);
-        AddPasteItem();
-        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
-            if (!COPY_FILES && !MOVE_FILES) {
-                M_AddMenuItem("Копировать", CopyFile);
-                M_AddMenuItem("Переместить", MoveFile);
-            }
-            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
-            if (uid) {
-                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                    M_AddMenuItem("Задать как...", SetAs);
-                }
-            }
-        }
-        else { // каталог
-        }
-        M_AddMenuItem("Удалить", Delete);
-    } else { // пустота :-)
-        M_AddMenuItem("Создать", CreateMenuCreate);
-        AddPasteItem();
-    }
+    M_AddMenuItem("Новую папку", CreateDir);
     data->menu = M_InitMenu();
     M_DestroyMenuItems();
 
@@ -87,8 +50,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-    wsprintf(data->surface->hdr_ws, "%t", "Опции");
-    data->gui.state = 1;
+    wsprintf(data->surface->hdr_ws, "%t", "Создать");
 }
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
@@ -144,7 +106,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuOptionsGUI() {
+void CreateMenuCreate() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
