@@ -8,7 +8,6 @@ void CopyFile();
 void MoveFile();
 void Paste();
 
-void SetAs();
 void SetAsWallpaper();
 void DeleteFiles(const SIE_FILE *files);
 

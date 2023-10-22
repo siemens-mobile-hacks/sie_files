@@ -3,7 +3,6 @@
 #include <sie/sie.h>
 #include "ipc.h"
 #include "path_stack.h"
-#include "menu_set_as.h"
 
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
@@ -91,10 +90,6 @@ void Paste() {
 }
 
 /**********************************************************************************************************************/
-
-void SetAs() {
-    CreateMenuSetAsGUI();
-}
 
 void SetAsWallpaper() {
     const size_t len1 = strlen(CURRENT_FILE->dir_name);

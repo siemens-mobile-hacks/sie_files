@@ -38,7 +38,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     sprintf(mask, "%s*", DIR_TEMPLATES);
     SIE_FILE *templates = Sie_FS_FindFiles(mask);
     if (templates) {
-        M_AddMenuItem("Новый файл", CreateMenuNewFileGUI);
+        M_AddMenuItem("Новый файл", CreateMenuNewFile);
         Sie_FS_DestroyFiles(templates);
     }
     M_AddMenuItem("Новую папку", CreateDir);

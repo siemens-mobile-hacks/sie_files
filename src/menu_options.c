@@ -5,6 +5,7 @@
 #include "procs.h"
 #include "path_stack.h"
 #include "menu_create.h"
+#include "menu_set_as.h"
 
 typedef struct {
     GUI gui;
@@ -68,7 +69,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
             if (uid) {
                 if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                    M_AddMenuItem("Задать как...", SetAs);
+                    M_AddMenuItem("Задать как...", CreateMenuSetAs);
                 }
             }
         }
@@ -144,7 +145,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuOptionsGUI() {
+void CreateMenuOptions() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));

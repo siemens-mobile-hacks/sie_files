@@ -269,7 +269,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 break;
             case LEFT_SOFT:
                 CURRENT_FILE = Sie_FS_GetFileByID(data->files, data->menu->row);
-                CreateMenuOptionsGUI();
+                CreateMenuOptions();
                 break;
             case RIGHT_SOFT:
                 if (!strlen(PATH_STACK->dir_name)) { // root

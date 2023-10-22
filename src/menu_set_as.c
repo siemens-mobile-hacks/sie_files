@@ -96,7 +96,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuSetAsGUI() {
+void CreateMenuSetAs() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
