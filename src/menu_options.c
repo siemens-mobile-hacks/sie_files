@@ -25,17 +25,17 @@ extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
 
 void Delete(void) {
-    void callback(int flag) {
+    void delete(int flag, void *data) {
         if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
             SIE_FILE *files = Sie_FS_CopyFileElement(CURRENT_FILE);
             DeleteFiles(files);
             Sie_FS_DestroyFiles(files);
         }
     }
-    WSHDR *ws = AllocWS(32);
-    wsprintf(ws, "%t", "Удалить?");
-    Sie_GUI_MsgBoxYesNo(ws, callback);
-    FreeWS(ws);
+    SIE_GUI_MSG_BOX_CALLBACK callback;
+    zeromem(&callback, sizeof(SIE_GUI_MSG_BOX_CALLBACK));
+    callback.proc = delete;
+    Sie_GUI_MsgBoxYesNo("Удалить?", &callback);
 }
 
 /**********************************************************************************************************************/

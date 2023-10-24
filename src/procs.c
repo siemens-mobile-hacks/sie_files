@@ -33,56 +33,93 @@ void MoveFile() {
 }
 
 void Paste() {
-    char *dir_name = PATH_STACK->dir_name;
-    size_t len_dir_name = strlen(dir_name);
-    SIE_FILE *p = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
-    if (p) {
-        unsigned int i_exists = 0;
-        while (p) {
-            char *dest_file_name = malloc(strlen(p->file_name) + 32 + 1);
-            if (!i_exists) {
-                strcpy(dest_file_name, p->file_name);
+    static SIE_FILE *top = NULL;
+    top = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
+
+    char *get_unique_path(const char *file_name) {
+        const size_t len_suffix = 32;
+        char *dir_name = PATH_STACK->dir_name;
+        char *dest = malloc(strlen(file_name) + len_suffix + 1);
+        char *dest_path = malloc(strlen(dir_name) + strlen(file_name) + len_suffix + 1);
+        unsigned int i = 0;
+        while (1) {
+            char suffix[len_suffix], *ext;
+            sprintf(suffix, "(%d)", i + 1);
+            ext = strrchr(file_name, '.');
+            if (ext) {
+                strncpy(dest, file_name, ext - file_name);
+                dest[ext - file_name] = '\0';
+                strcat(dest, suffix);
+                strcat(dest, ext);
             } else {
-                char s[8], *ext;
-                sprintf(s, "(%d)", i_exists);
-                ext = strrchr(p->file_name, '.');
-                if (ext) {
-                    strncpy(dest_file_name, p->file_name, ext - p->file_name);
-                    dest_file_name[ext - p->file_name] = '\0';
-                    strcat(dest_file_name, s);
-                    strcat(dest_file_name, ext);
-                } else {
-                    strcpy(dest_file_name, p->file_name);
-                    strcat(dest_file_name, s);
-                }
+                strcpy(dest, file_name);
+                strcat(dest, suffix);
             }
-            char *src = Sie_FS_GetPathByFile(p);
-            char *dest = malloc(len_dir_name + strlen(dest_file_name) + 1);
-            sprintf(dest, "%s%s", dir_name, dest_file_name);
-            if (Sie_FS_FileExists(dest)) {
-                i_exists += 1;
-                mfree(src);
+            sprintf(dest_path, "%s%s", dir_name, dest);
+            if (!Sie_FS_FileExists(dest_path)) {
                 mfree(dest);
-                continue;
+                return dest_path;
             } else {
-                unsigned int err;
+                i += 1;
+            }
+        }
+    }
+    void paste(int flag, void *data) {
+        SIE_FILE *p = Sie_FS_DeleteFileElement(top, (SIE_FILE*)data);
+        if (p) {
+            char *src = Sie_FS_GetPathByFile(p);
+            if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
+                char *dest = get_unique_path(p->file_name);
+                Sie_FS_CopyFile(src, dest);
+                mfree(dest);
+            }
+            mfree(src);
+
+            if (!p->prev && !p->next) {
+                COPY_FILES = MOVE_FILES = NULL;
+            }
+            Sie_FS_DestroyFileElement(p);
+            ipc_redraw();
+        }
+    }
+
+    if (top) {
+        char *dir_name = PATH_STACK->dir_name;
+        SIE_FILE *p = top;
+        while (p) {
+            SIE_FILE *next = p->next;
+            char *src = Sie_FS_GetPathByFile(p);
+            if (strcmpi(dir_name, p->dir_name) == 0) { // current dir
+                char *dest = get_unique_path(p->file_name);
                 if (COPY_FILES) {
                     Sie_FS_CopyFile(src, dest);
-                } else {
-                    fmove(src, dest, &err);
+                    Sie_FS_DestroyFiles(COPY_FILES);
+                    COPY_FILES = NULL;
                 }
-                mfree(src);
                 mfree(dest);
-                i_exists = 0;
+            } else {
+                char *dest = malloc(strlen(dir_name) + strlen(p->file_name) + 1);
+                sprintf(dest, "%s%s", dir_name, p->file_name);
+                if (Sie_FS_FileExists(dest)) {
+                    SIE_GUI_MSG_BOX_CALLBACK callback;
+                    callback.proc = paste;
+                    callback.data = p;
+                    Sie_GUI_MsgBox("Файл существует", "Вставить", "Заменить", &callback);
+                } else {
+                    unsigned int err;
+                    if (COPY_FILES) {
+                        Sie_FS_CopyFile(src, dest);
+                        Sie_FS_DestroyFiles(COPY_FILES);
+                    } else {
+                        fmove(src, dest, &err);
+                        Sie_FS_DestroyFiles(MOVE_FILES);
+                    }
+                    COPY_FILES = MOVE_FILES = NULL;
+                }
+                mfree(dest);
             }
-            p = p->next;
-        }
-        if (COPY_FILES) {
-            Sie_FS_DestroyFiles(COPY_FILES);
-            COPY_FILES = NULL;
-        } else {
-            Sie_FS_DestroyFiles(MOVE_FILES);
-            MOVE_FILES = NULL;
+            mfree(src);
+            p = next;
         }
     }
     GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
