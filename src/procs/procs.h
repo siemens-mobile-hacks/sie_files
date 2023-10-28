@@ -1,6 +1,8 @@
 #ifndef __PROCS_H__
 #define __PROCS_H__
 
+#include "paste.h"
+
 void CreateDiskInfoGUI();
 void CreateFile();
 void CreateDir();

@@ -4,6 +4,6 @@
 #define IPC_NAME "SieFiles"
 #define IPC_REDRAW 0x00
 
-void ipc_redraw();
+void IPC_Redraw();
 
 #endif

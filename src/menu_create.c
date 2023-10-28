@@ -3,7 +3,7 @@
 #include <sie/sie.h>
 #include "menu.h"
 #include "menu_new_file.h"
-#include "procs.h"
+#include "procs/procs.h"
 
 typedef struct {
     GUI gui;

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "menu.h"
-#include "procs.h"
+#include "procs/procs.h"
 
 typedef struct {
     GUI gui;

@@ -1,7 +1,7 @@
 #include <swilib.h>
 #include "ipc.h"
 
-void ipc_redraw() {
+void IPC_Redraw() {
     static IPC_REQ ipc;
     zeromem(&ipc, sizeof(IPC_REQ));
     ipc.name_from = IPC_NAME;
