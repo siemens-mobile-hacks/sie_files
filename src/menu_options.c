@@ -59,13 +59,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     if (!strlen(PATH_STACK->dir_name)) { // диски
         M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
     } else if (CURRENT_FILE) { // каталог или файл
-        M_AddMenuItem("Создать", CreateMenuCreate);
         AddPasteItem();
+        M_AddMenuItem("Создать", CreateMenuCreate);
         if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
-            if (!COPY_FILES && !MOVE_FILES) {
-                M_AddMenuItem("Копировать", CopyFile);
-                M_AddMenuItem("Переместить", MoveFile);
-            }
+            M_AddMenuItem("Копировать", CopyFile);
+            M_AddMenuItem("Переместить", MoveFile);
             int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
             if (uid) {
                 if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
@@ -73,12 +71,14 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
                 }
             }
         }
-        else { // каталог
+        else { // dir
+            M_AddMenuItem("Копировать", CopyFile);
+            M_AddMenuItem("Переместить", MoveFile);
         }
         M_AddMenuItem("Удалить", Delete);
-    } else { // пустота :-)
-        M_AddMenuItem("Создать", CreateMenuCreate);
+    } else { // empty :-)
         AddPasteItem();
+        M_AddMenuItem("Создать", CreateMenuCreate);
     }
     data->menu = M_InitMenu();
     M_DestroyMenuItems();
