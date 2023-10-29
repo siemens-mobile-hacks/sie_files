@@ -9,7 +9,7 @@ extern path_stack_t *PATH_STACK;
 extern unsigned int MAIN_GUI_ID;
 extern SIE_GUI_STACK *GUI_STACK;
 
-char *GetUniquePath(const char *file_name) {
+char *GetUniqueFileName(const char *file_name) {
     const size_t len_suffix = 32;
     char *dir_name = PATH_STACK->dir_name;
     char *dest = malloc(strlen(file_name) + len_suffix + 1);
@@ -30,12 +30,25 @@ char *GetUniquePath(const char *file_name) {
         }
         sprintf(dest_path, "%s%s", dir_name, dest);
         if (!Sie_FS_FileExists(dest_path)) {
-            mfree(dest);
-            return dest_path;
+            mfree(dest_path);
+            return dest;
         } else {
             i += 1;
         }
     }
+}
+
+char *GetPath(const char *file_name) {
+    char *path = malloc(strlen(PATH_STACK->dir_name) + strlen(file_name) + 1);
+    sprintf(path, "%s%s", PATH_STACK->dir_name, file_name);
+    return path;
+}
+
+void Redraw(const char *file_name) {
+    size_t len = strlen(file_name);
+    WSHDR *ws = AllocWS(len);
+    str_2ws(ws, file_name, len);
+    IPC_SetRowByFileName_ws(ws);
 }
 
 void MsgProc(int flag, void *data) {
@@ -44,21 +57,23 @@ void MsgProc(int flag, void *data) {
     if (p) {
         char *src = Sie_FS_GetPathByFile(p);
         if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            char *dest = GetUniquePath(p->file_name);
+            char *unique = GetUniqueFileName(p->file_name);
+            char *dest_path = GetPath(unique);
             if (p->file_attr & FA_DIRECTORY) {
                 // CopyFileRecursive
                 ShowMSG(1, (int)"Is directory");
             } else {
-                Sie_FS_CopyFile(src, dest);
+                Sie_FS_CopyFile(src, dest_path);
             }
-            mfree(dest);
+            Redraw(unique);
+            mfree(unique);
+            mfree(dest_path);
         }
         mfree(src);
         if (!p->prev && !p->next) {
             COPY_FILES = MOVE_FILES = NULL;
         }
         Sie_FS_DestroyFileElement(p);
-        IPC_Redraw();
     }
 }
 
@@ -69,23 +84,27 @@ void Paste() {
         SIE_FILE *p = top;
         while (1) {
             SIE_FILE *next = p->next;
-            char *src = Sie_FS_GetPathByFile(p);
             if (strcmpi(dir_name, p->dir_name) == 0) { // current dir
-                char *dest = GetUniquePath(p->file_name);
+                char *unique = GetUniqueFileName(p->file_name);
+                char *dest_path = GetPath(unique);
                 if (COPY_FILES) {
-                    Sie_FS_CopyFile(src, dest);
+                    char *src = Sie_FS_GetPathByFile(p);
+                    Sie_FS_CopyFile(src, dest_path);
+                    mfree(src);
                 }
-                mfree(dest);
+                mfree(dest_path);
                 if (!next) {
-                    IPC_Redraw();
+                    Redraw(unique);
+                    mfree(unique);
                     Sie_FS_DestroyFiles(COPY_FILES);
                     COPY_FILES = NULL;
                     break;
                 }
+                mfree(unique);
             } else {
-                char *dest = malloc(strlen(dir_name) + strlen(p->file_name) + 1);
-                sprintf(dest, "%s%s", dir_name, p->file_name);
+                char *dest = GetPath(p->file_name);
                 if (Sie_FS_FileExists(dest)) {
+                    mfree(dest);
                     SIE_GUI_MSG_BOX_CALLBACK callback;
                     callback.proc = MsgProc;
                     callback.data = p;
@@ -96,29 +115,32 @@ void Paste() {
                 } else {
                     unsigned int err;
                     if (COPY_FILES) {
+                        char *src = Sie_FS_GetPathByFile(p);
                         Sie_FS_CopyFile(src, dest);
+                        mfree(src);
+                        mfree(dest);
                         if (!next) {
-                            IPC_Redraw();
+                            Redraw(top->file_name);
                             Sie_FS_DestroyFiles(COPY_FILES);
                             COPY_FILES = NULL;
                             break;
                         }
                     } else {
+                        char *src = Sie_FS_GetPathByFile(p);
                         fmove(src, dest, &err);
+                        mfree(src);
+                        mfree(dest);
                         if (!next) {
-                            IPC_Redraw();
+                            Redraw(top->file_name);
                             Sie_FS_DestroyFiles(MOVE_FILES);
                             MOVE_FILES = NULL;
                             break;
                         }
                     }
                 }
-                mfree(dest);
             }
-            mfree(src);
             p = next;
         }
     }
     GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
-    IPC_Redraw();
 }

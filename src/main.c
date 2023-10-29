@@ -341,11 +341,19 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
     else if (msg->msg == MSG_IPC) {
         IPC_REQ *ipc = (IPC_REQ*)msg->data0;
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
-            switch (msg->submess) {
-                case IPC_REDRAW:
-                    ChangeDir(csm->main_gui, ".");
+            if (msg->submess == IPC_REDRAW) {
+                ChangeDir(csm->main_gui, ".");
+                DirectRedrawGUI();
+            } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
+                unsigned int row = 0, err = 0;
+                ChangeDir(csm->main_gui, ".");
+                row = Sie_Menu_List_GetIdByName_ws(MENU, ipc->data, &err);
+                if (!err) {
+                    Sie_Menu_List_SetRow(MENU, row);
+                    Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
-                    break;
+                }
+                FreeWS(ipc->data);
             }
         }
     }
