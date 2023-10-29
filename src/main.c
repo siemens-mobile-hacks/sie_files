@@ -10,7 +10,6 @@
 typedef struct {
     GUI gui;
     SIE_FILE *files;
-    SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
 
@@ -29,6 +28,7 @@ const int minus11 = -11;
 unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
+SIE_MENU_LIST *MENU;
 SIE_FILE *CURRENT_FILE;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
 path_stack_t *PATH_STACK;
@@ -132,8 +132,8 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
 };
 
 void UpdateHeader(MAIN_GUI *data) {
-    if (data->menu->n_items) {
-        wsprintf(data->surface->hdr_ws, "\t%d/%d", data->menu->row + 1, data->menu->n_items);
+    if (MENU->n_items) {
+        wsprintf(data->surface->hdr_ws, "\t%d/%d", MENU->row + 1, MENU->n_items);
     } else {
         wsprintf(data->surface->hdr_ws, "");
     }
@@ -142,8 +142,8 @@ void UpdateHeader(MAIN_GUI *data) {
 void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_FS_DestroyFiles(data->files);
     data->files = NULL;
-    Sie_Menu_List_Destroy(data->menu);
-    data->menu = Sie_Menu_List_Init(NULL, 0);
+    Sie_Menu_List_Destroy(MENU);
+    MENU = Sie_Menu_List_Init(NULL, 0);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -158,20 +158,20 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 
     if (!strlen(p->dir_name)) { // root
         data->files = InitRootFiles();
-        data->menu->items = InitRootItems(data, &(data->menu->n_items));
-        data->menu->row = p->row;
+        MENU->items = InitRootItems(data, &(MENU->n_items));
+        MENU->row = p->row;
     } else {
         char *mask = NULL;
         mask = malloc(strlen(p->dir_name) + 1 + 1);
         sprintf(mask, "%s*", p->dir_name);
         data->files = Sie_FS_FindFiles(mask);
         data->files = Sie_FS_SortFilesByName(data->files, 1);
-        data->menu->items = InitItems(data->files, &(data->menu->n_items));
-        if (p->row >= data->menu->n_items) {
-            p->row = data->menu->n_items - 1;
+        MENU->items = InitItems(data->files, &(MENU->n_items));
+        if (p->row >= MENU->n_items) {
+            p->row = MENU->n_items - 1;
         }
-        data->menu->row = p->row;
-        Sie_Menu_List_Refresh(data->menu);
+        MENU->row = p->row;
+        Sie_Menu_List_Refresh(MENU);
         mfree(mask);
     }
     UpdateHeader(data);
@@ -181,7 +181,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 
 static void OnRedraw(MAIN_GUI *data) {
     Sie_GUI_Surface_Draw(data->surface);
-    Sie_Menu_List_Draw(data->menu);
+    Sie_Menu_List_Draw(MENU);
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
@@ -198,7 +198,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     SIE_MENU_LIST_ITEM *menu_items = InitRootItems(data, &n_items);
-    data->menu = Sie_Menu_List_Init(menu_items, n_items);
+    MENU = Sie_Menu_List_Init(menu_items, n_items);
     UpdateHeader(data);
 
     data->gui.state = 1;
@@ -207,7 +207,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
     Sie_FS_DestroyFiles(data->files);
-    Sie_Menu_List_Destroy(data->menu);
+    Sie_Menu_List_Destroy(MENU);
     DestroyPathStack(PATH_STACK);
     Sie_FT_Destroy();
     Sie_Resources_Destroy();
@@ -227,23 +227,23 @@ static void OnUnfocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
     char path[1024];
 
-    Sie_Menu_List_OnKey(data->menu, msg);
+    Sie_Menu_List_OnKey(MENU, msg);
 
     if (msg->gbsmsg->msg == KEY_DOWN || msg->gbsmsg->msg == LONG_PRESS) {
         switch (msg->gbsmsg->submess) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
-                PATH_STACK->row = data->menu->row;
+                PATH_STACK->row = MENU->row;
                 UpdateHeader(data);
                 Sie_GUI_Surface_Draw(data->surface);
                 break;
             case SIE_MENU_LIST_KEY_ENTER:
-                if (data->menu->n_items) {
+                if (MENU->n_items) {
                     SIE_FILE *file = NULL;
                     if (!strlen(PATH_STACK->dir_name)) { // root
-                        file = Sie_FS_GetFileByID(data->files, data->menu->row);
+                        file = Sie_FS_GetFileByID(data->files, MENU->row);
                     } else {
-                        WSHDR *ws = data->menu->items[data->menu->row].ws;
+                        WSHDR *ws = MENU->items[MENU->row].ws;
                         ws_2str(ws, path, wstrlen(ws));
                         file = Sie_FS_GetFileByFileName(data->files, path);
                     }
@@ -253,7 +253,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                             //data->path_list_last->row = data->menu->row;
                             ChangeDir(data, path);
                             Sie_GUI_Surface_Draw(data->surface);
-                            Sie_Menu_List_Draw(data->menu);
+                            Sie_Menu_List_Draw(MENU);
                         } else {
                             WSHDR *ws = AllocWS(12);
                             size_t len;
@@ -268,7 +268,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 }
                 break;
             case LEFT_SOFT:
-                CURRENT_FILE = Sie_FS_GetFileByID(data->files, data->menu->row);
+                CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
                 CreateMenuOptions();
                 break;
             case RIGHT_SOFT:
@@ -277,7 +277,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 } else {
                     ChangeDir(data, "..");
                     Sie_GUI_Surface_Draw(data->surface);
-                    Sie_Menu_List_Draw(data->menu);
+                    Sie_Menu_List_Draw(MENU);
                 }
                 break;
         }
