@@ -2,47 +2,13 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 #include "../ipc.h"
+#include "../helpers.h"
 #include "../path_stack.h"
 
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 extern path_stack_t *PATH_STACK;
 extern unsigned int MAIN_GUI_ID;
 extern SIE_GUI_STACK *GUI_STACK;
-
-char *GetUniqueFileName(const char *file_name) {
-    const size_t len_suffix = 32;
-    char *dir_name = PATH_STACK->dir_name;
-    char *dest = malloc(strlen(file_name) + len_suffix + 1);
-    char *dest_path = malloc(strlen(dir_name) + strlen(file_name) + len_suffix + 1);
-    unsigned int i = 0;
-    while (1) {
-        char suffix[len_suffix], *ext;
-        sprintf(suffix, "(%d)", i + 1);
-        ext = strrchr(file_name, '.');
-        if (ext) {
-            strncpy(dest, file_name, ext - file_name);
-            dest[ext - file_name] = '\0';
-            strcat(dest, suffix);
-            strcat(dest, ext);
-        } else {
-            strcpy(dest, file_name);
-            strcat(dest, suffix);
-        }
-        sprintf(dest_path, "%s%s", dir_name, dest);
-        if (!Sie_FS_FileExists(dest_path)) {
-            mfree(dest_path);
-            return dest;
-        } else {
-            i += 1;
-        }
-    }
-}
-
-char *GetPath(const char *file_name) {
-    char *path = malloc(strlen(PATH_STACK->dir_name) + strlen(file_name) + 1);
-    sprintf(path, "%s%s", PATH_STACK->dir_name, file_name);
-    return path;
-}
 
 void Redraw(const char *file_name) {
     size_t len = strlen(file_name);
@@ -57,17 +23,17 @@ void MsgProc(int flag, void *data) {
     if (p) {
         char *src = Sie_FS_GetPathByFile(p);
         if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            char *unique = GetUniqueFileName(p->file_name);
-            char *dest_path = GetPath(unique);
+            SIE_FILE *file = GetUniqueFileInCurrentDir(p);
+            char *path = Sie_FS_GetPathByFile(file);
             if (p->file_attr & FA_DIRECTORY) {
                 // CopyFileRecursive
                 ShowMSG(1, (int)"Is directory");
             } else {
-                Sie_FS_CopyFile(src, dest_path);
+                Sie_FS_CopyFile(src, path);
             }
-            Redraw(unique);
-            mfree(unique);
-            mfree(dest_path);
+            Redraw(file->file_name);
+            mfree(path);
+            Sie_FS_DestroyFileElement(file);
         }
         mfree(src);
         if (!p->prev && !p->next) {
@@ -85,24 +51,25 @@ void Paste() {
         while (1) {
             SIE_FILE *next = p->next;
             if (strcmpi(dir_name, p->dir_name) == 0) { // current dir
-                char *unique = GetUniqueFileName(p->file_name);
-                char *dest_path = GetPath(unique);
+                SIE_FILE *file = GetUniqueFileInCurrentDir(p);
+                char *dest = Sie_FS_GetPathByFile(file);
                 if (COPY_FILES) {
                     char *src = Sie_FS_GetPathByFile(p);
-                    Sie_FS_CopyFile(src, dest_path);
+                    Sie_FS_CopyFile(src, dest);
                     mfree(src);
                 }
-                mfree(dest_path);
+                mfree(dest);
                 if (!next) {
-                    Redraw(unique);
-                    mfree(unique);
+                    Redraw(file->file_name);
+                    Sie_FS_DestroyFileElement(file);
                     Sie_FS_DestroyFiles(COPY_FILES);
                     COPY_FILES = NULL;
                     break;
                 }
-                mfree(unique);
+                Sie_FS_DestroyFileElement(file);
             } else {
-                char *dest = GetPath(p->file_name);
+                char *dest = malloc(strlen(PATH_STACK->dir_name) + strlen(p->file_name) + 1);
+                sprintf(dest, "%s%s", PATH_STACK->dir_name, p->file_name);
                 if (Sie_FS_FileExists(dest)) {
                     mfree(dest);
                     SIE_GUI_MSG_BOX_CALLBACK callback;
