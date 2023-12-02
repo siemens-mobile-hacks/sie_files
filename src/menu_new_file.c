@@ -15,7 +15,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
-extern const char *DIR_TEMPLATES;
+extern char *DIR_TEMPLATES;
 
 static void OnRedraw(MAIN_GUI *data) {
     Sie_GUI_Surface_Draw(data->surface);

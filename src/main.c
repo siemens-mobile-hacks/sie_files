@@ -23,6 +23,8 @@ typedef struct {
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 /**********************************************************************************************************************/
+int DEFAULT_DISK;
+char *DIR_TEMPLATES;
 
 const int minus11 = -11;
 unsigned short maincsm_name_body[140];
@@ -37,7 +39,6 @@ SIE_GUI_STACK *GUI_STACK;
 
 const char *DIR_ROOT = "0:\\zbin\\usr\\sie_files\\";
 const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
-const char *DIR_TEMPLATES = "0:\\Templates\\";
 
 /**********************************************************************************************************************/
 
@@ -309,7 +310,25 @@ const void *const gui_methods[11] = {
         0
 };
 
+void CreateDefaultFiles() {
+    WSHDR *ws;
+    char path[256];
+    unsigned int err;
+    _mkdir(DIR_TEMPLATES, &err);
+    ws = AllocWS(64);
+    wsprintf(ws, "%s%t", DIR_TEMPLATES, "Текстовый файл.txt");
+    ws_2str(ws, path, 255);
+    FreeWS(ws);
+    if (!Sie_FS_FileExists(path)) {
+        Sie_FS_CreateFile(path);
+    }
+}
+
 static void maincsm_oncreate(CSM_RAM *data) {
+    DIR_TEMPLATES = malloc(32);
+    sprintf(DIR_TEMPLATES, "%d:\\%s", DEFAULT_DISK, "Templates\\");
+    SUBPROC((void*)CreateDefaultFiles);
+
     MAIN_CSM *csm = (MAIN_CSM*)data;
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
@@ -330,6 +349,7 @@ void KillElf() {
 }
 
 static void maincsm_onclose(CSM_RAM *csm) {
+    mfree(DIR_TEMPLATES);
     SUBPROC((void *)KillElf);
 }
 
@@ -398,6 +418,7 @@ void UpdateCSMname(void) {
 
 int main(const char *exename, const char *fname) {
     MAIN_CSM main_csm;
+    sscanf(exename, "%d:\\", &DEFAULT_DISK);
     LockSched();
     UpdateCSMname();
     CreateCSM(&MAINCSM.maincsm, &main_csm, 0);
