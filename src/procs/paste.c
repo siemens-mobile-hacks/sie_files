@@ -22,7 +22,7 @@ void MsgProc(int flag, void *data) {
     SIE_FILE *p = Sie_FS_DeleteFileElement(top, (SIE_FILE*)data);
     if (p) {
         char *src = Sie_FS_GetPathByFile(p);
-        if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
+        if (flag == SIE_GUI_MSG_BOX_CALLBACK_NO) {
             SIE_FILE *file = GetUniqueFileInCurrentDir(p);
             char *path = Sie_FS_GetPathByFile(file);
             if (p->file_attr & FA_DIRECTORY) {
@@ -75,7 +75,7 @@ void Paste() {
                     SIE_GUI_MSG_BOX_CALLBACK callback;
                     callback.proc = MsgProc;
                     callback.data = p;
-                    Sie_GUI_MsgBox("Файл существует", "Вставить", "Заменить", &callback);
+                    Sie_GUI_MsgBox("Файл существует", "Заменить", "Вставить", &callback);
                     if (!next) {
                         break;
                     }
