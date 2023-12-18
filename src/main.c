@@ -4,6 +4,7 @@
 #include "ipc.h"
 #include "path_stack.h"
 #include "menu_options.h"
+#include "procs/procs.h"
 
 #define MAIN_CSM_NAME "Файлы"
 
@@ -235,6 +236,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
                 PATH_STACK->row = MENU->row;
+                CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
                 UpdateHeader(data);
                 Sie_GUI_Surface_Draw(data->surface);
                 break;
@@ -269,7 +271,6 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 }
                 break;
             case LEFT_SOFT:
-                CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
                 CreateMenuOptions();
                 break;
             case RIGHT_SOFT:
@@ -280,6 +281,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     Sie_GUI_Surface_Draw(data->surface);
                     Sie_Menu_List_Draw(MENU);
                 }
+                break;
+            case '#':
+                Delete();
                 break;
         }
     }
