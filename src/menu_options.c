@@ -24,20 +24,6 @@ extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
 
-void Delete(void) {
-    void delete(int flag, void *data) {
-        if (flag == SIE_GUI_MSG_BOX_CALLBACK_YES) {
-            SIE_FILE *files = Sie_FS_CopyFileElement(CURRENT_FILE);
-            DeleteFiles(files);
-            Sie_FS_DestroyFiles(files);
-        }
-    }
-    SIE_GUI_MSG_BOX_CALLBACK callback;
-    zeromem(&callback, sizeof(SIE_GUI_MSG_BOX_CALLBACK));
-    callback.proc = delete;
-    Sie_GUI_MsgBoxYesNo("Удалить?", &callback);
-}
-
 /**********************************************************************************************************************/
 
 static void OnRedraw(MAIN_GUI *data) {

@@ -17,7 +17,7 @@ void Redraw(const char *file_name) {
     IPC_SetRowByFileName_ws(ws);
 }
 
-void MsgProc(int flag, void *data) {
+static void MsgProc(int flag, void *data) {
     SIE_FILE *top = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
     SIE_FILE *p = Sie_FS_DeleteFileElement(top, (SIE_FILE*)data);
     if (p) {
