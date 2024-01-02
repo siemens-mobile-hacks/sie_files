@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <sie/sie.h>
 
-SIE_MENU_LIST *InitMenu(const char **names, void (**procs)(void *menu_item, unsigned int row),
-                        unsigned int count) {
+SIE_MENU_LIST *InitMenu(unsigned int gui_id, const char **names,
+                        void (**procs)(void *menu_item, unsigned int row), unsigned int count) {
     SIE_MENU_LIST_ITEM *items = malloc(sizeof(SIE_MENU_LIST_ITEM) * count);
     for (unsigned int i = 0; i < count; i++) {
         SIE_MENU_LIST_ITEM *item = &(items[i]);
@@ -19,7 +19,7 @@ SIE_MENU_LIST *InitMenu(const char **names, void (**procs)(void *menu_item, unsi
         item->proc = procs[i];
     }
     SIE_MENU_LIST *menu = NULL;
-    menu = Sie_Menu_List_Init(items, count);
+    menu = Sie_Menu_List_Init(gui_id, items, count);
     return menu;
 }
 

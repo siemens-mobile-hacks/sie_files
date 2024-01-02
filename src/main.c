@@ -145,7 +145,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_FS_DestroyFiles(data->files);
     data->files = NULL;
     Sie_Menu_List_Destroy(MENU);
-    MENU = Sie_Menu_List_Init(NULL, 0);
+    MENU = Sie_Menu_List_Init(MAIN_GUI_ID, NULL, 0);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -200,7 +200,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     SIE_MENU_LIST_ITEM *menu_items = InitRootItems(data, &n_items);
-    MENU = Sie_Menu_List_Init(menu_items, n_items);
+    MENU = Sie_Menu_List_Init(MAIN_GUI_ID, menu_items, n_items);
     UpdateHeader(data);
 
     data->gui.state = 1;
@@ -220,9 +220,9 @@ static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(
     Sie_GUI_Surface_OnFocus(data->surface);
 }
 
-static void OnUnfocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
+static void OnUnFocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     if (data->gui.state != 2) return;
-    Sie_GUI_Surface_OnUnfocus(data->surface);
+    Sie_GUI_Surface_OnUnFocus(data->surface);
     data->gui.state = 1;
 }
 
@@ -305,7 +305,7 @@ const void *const gui_methods[11] = {
         (void*)OnCreate,
         (void*)OnClose,
         (void*)OnFocus,
-        (void*)OnUnfocus,
+        (void*)OnUnFocus,
         (void*)OnKey,
         0,
         (void*)kill_data,

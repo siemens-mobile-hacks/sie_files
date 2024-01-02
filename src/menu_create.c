@@ -65,10 +65,10 @@ static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(
     Sie_GUI_Surface_OnFocus(data->surface);
 }
 
-static void OnUnfocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
+static void OnUnFocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     if (data->gui.state != 2) return;
     data->gui.state = 1;
-    Sie_GUI_Surface_OnUnfocus(data->surface);
+    Sie_GUI_Surface_OnUnFocus(data->surface);
 }
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
@@ -97,7 +97,7 @@ static const void *const gui_methods[11] = {
         (void*)OnCreate,
         (void*)OnClose,
         (void*)OnFocus,
-        (void*)OnUnfocus,
+        (void*)OnUnFocus,
         (void*)OnKey,
         0,
         (void*)kill_data,

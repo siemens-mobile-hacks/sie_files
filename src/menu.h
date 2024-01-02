@@ -3,9 +3,9 @@
 
 #include <sie/sie.h>
 
-SIE_MENU_LIST *InitMenu(const char **names, void (**procs)(void), unsigned int count);
+SIE_MENU_LIST *InitMenu(unsigned int gui_id, const char **names, void (**procs)(void), unsigned int count);
 void DestroyMenu(SIE_MENU_LIST *menu);
-#define M_InitMenu() InitMenu((const char **)names, procs, count)
+#define M_InitMenu() InitMenu(data->gui_id, (const char **)names, procs, count)
 
 void AddMenuItem(char ***names, void (***procs)(), unsigned int *count, const char *name, void (*proc)());
 void DestroyMenuItems(char **names, void (**procs)(), unsigned int count);
