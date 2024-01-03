@@ -44,8 +44,8 @@ const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
 /**********************************************************************************************************************/
 
 SIE_FILE *InitRootFiles() {
-    const int count = 3;
-    const char *names[] = {"0:", "1:", "2:"};
+    const int count = Sie_FS_MMCardExists() ? 4 : 3;
+    const char *names[] = {"0:", "1:", "2:", "4:"};
 
     size_t len;
     SIE_FILE *prev = NULL;
@@ -77,12 +77,15 @@ SIE_FILE *InitRootFiles() {
 }
 
 SIE_MENU_LIST_ITEM *InitRootItems(MAIN_GUI *data, unsigned int *count) {
-    const int c = 3;
-    const char *names[] = {"Data", "Cache", "Config"};
+    const int c = Sie_FS_MMCardExists() ? 4 : 3;
+    const char *names[] = {"Data", "Cache", "Config", "MMCard"};
+    const char *images[] = {"drive", "drive", "drive", "mmcard"};
+
     SIE_MENU_LIST_ITEM *items = malloc(sizeof(SIE_MENU_LIST_ITEM) * c);
     zeromem(items, (int)(sizeof(SIE_MENU_LIST_ITEM) * c));
-    SIE_RESOURCES_EXT *res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "drive");
     for (int i = 0; i < c; i++) {
+        SIE_RESOURCES_EXT *res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,
+                                                             images[i]);
         if (res_ext) {
             items[i].icon = res_ext->icon;
         }
