@@ -97,6 +97,8 @@ SIE_MENU_LIST_ITEM *InitRootItems(MAIN_GUI *data, unsigned int *count) {
 }
 
 SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
+    static char color_hidden[] = COLOR_TEXT_DISABLED;
+
     SIE_MENU_LIST_ITEM *items = NULL;
 
     SIE_FILE *file = top;
@@ -107,8 +109,8 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         item = &(items[i]);
         zeromem(item, sizeof(SIE_MENU_LIST_ITEM));
 
+        // icon
         SIE_RESOURCES_EXT *res_ext = NULL;
-        size_t len = strlen(file->file_name);
         if (file->file_attr & FA_DIRECTORY) {
             res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
@@ -126,9 +128,14 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         if (res_ext) {
             item->icon = res_ext->icon;
         }
+        // ws
+        size_t len = strlen(file->file_name);
         item->ws = AllocWS((int)(len + 1));
         str_2ws(item->ws, file->file_name, len);
-
+        // color
+        if (file->file_attr & FA_HIDDEN) {
+            item->color = color_hidden;
+        }
         file = file->next;
         i++;
     }
