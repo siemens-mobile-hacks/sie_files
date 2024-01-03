@@ -73,6 +73,7 @@ SIE_FILE *InitRootFiles() {
         }
         p = p->prev;
     }
+    CURRENT_FILE = p;
     return p;
 }
 
@@ -143,9 +144,18 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
     return items;
 };
 
+inline char GetAttr(int attr, char c) {
+    return (CURRENT_FILE->file_attr & attr) ? c : '-';
+}
+
 void UpdateHeader(MAIN_GUI *data) {
-    if (MENU->n_items) {
-        wsprintf(data->surface->hdr_ws, "\t%d/%d", MENU->row + 1, MENU->n_items);
+    if (CURRENT_FILE) {
+        wsprintf(data->surface->hdr_ws, "%c%c%c%c\t%d/%d",
+                 GetAttr(FA_READONLY, 'r'),
+                 GetAttr(FA_HIDDEN, 'h'),
+                 GetAttr(FA_SYSTEM, 's'),
+                 GetAttr(FA_DIRECTORY, 'd'),
+                 MENU->row + 1, MENU->n_items);
     } else {
         wsprintf(data->surface->hdr_ws, "");
     }
