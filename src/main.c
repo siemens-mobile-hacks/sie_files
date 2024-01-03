@@ -178,11 +178,16 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
         sprintf(mask, "%s*", p->dir_name);
         data->files = Sie_FS_FindFiles(mask);
         data->files = Sie_FS_SortFilesByName(data->files, 1);
-        MENU->items = InitItems(data->files, &(MENU->n_items));
-        if (p->row >= MENU->n_items) {
-            p->row = MENU->n_items - 1;
+        if (data->files) {
+            MENU->items = InitItems(data->files, &(MENU->n_items));
+            if (p->row >= MENU->n_items) {
+                p->row = MENU->n_items - 1;
+            }
+            MENU->row = p->row;
+            CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
+        } else {
+            CURRENT_FILE = NULL;
         }
-        MENU->row = p->row;
         Sie_Menu_List_Refresh(MENU);
         mfree(mask);
     }
@@ -293,7 +298,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 }
                 break;
             case '#':
-                Delete();
+                if (CURRENT_FILE) {
+                    Delete();
+                }
                 break;
         }
     }
