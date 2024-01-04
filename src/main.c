@@ -77,24 +77,24 @@ SIE_FILE *InitRootFiles() {
     return p;
 }
 
-SIE_MENU_LIST_ITEM *InitRootItems(MAIN_GUI *data, unsigned int *count) {
+SIE_MENU_LIST *InitRootMenu() {
+    SIE_MENU_LIST *menu = Sie_Menu_List_Init(MAIN_GUI_ID);
+
     const int c = Sie_FS_MMCardExists() ? 4 : 3;
     const char *names[] = {"Data", "Cache", "Config", "MMCard"};
     const char *images[] = {"drive", "drive", "drive", "mmcard"};
 
-    SIE_MENU_LIST_ITEM *items = malloc(sizeof(SIE_MENU_LIST_ITEM) * c);
-    zeromem(items, (int)(sizeof(SIE_MENU_LIST_ITEM) * c));
     for (int i = 0; i < c; i++) {
-        SIE_RESOURCES_IMG *res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,
-                                                             images[i]);
+        SIE_MENU_LIST_ITEM item;
+        SIE_RESOURCES_IMG *res_img;
+        zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+        res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,images[i]);
         if (res_img) {
-            items[i].icon = res_img->icon;
+            item.icon = res_img->icon;
         }
-        items[i].ws = AllocWS(32);
-        wsprintf(items[i].ws, "%s", names[i]);
+        Sie_Menu_List_AddItem(menu, &item, names[i]);
     }
-    *count = c;
-    return items;
+    return menu;
 }
 
 SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
@@ -165,7 +165,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_FS_DestroyFiles(data->files);
     data->files = NULL;
     Sie_Menu_List_Destroy(MENU);
-    MENU = Sie_Menu_List_Init(MAIN_GUI_ID, NULL, 0);
+    MENU = Sie_Menu_List_Init(MAIN_GUI_ID);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -180,7 +180,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 
     if (!strlen(p->dir_name)) { // root
         data->files = InitRootFiles();
-        MENU->items = InitRootItems(data, &(MENU->n_items));
+        MENU = InitRootMenu();
         MENU->row = p->row;
     } else {
         char *mask = NULL;
@@ -216,16 +216,13 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     Sie_Resources_Init();
     PATH_STACK = InitPathStack();
 
-    unsigned int n_items;
-    data->files = InitRootFiles();
-
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-    SIE_MENU_LIST_ITEM *menu_items = InitRootItems(data, &n_items);
-    MENU = Sie_Menu_List_Init(MAIN_GUI_ID, menu_items, n_items);
+    data->files = InitRootFiles();
+    MENU = InitRootMenu();
     UpdateHeader(data);
 
     data->gui.state = 1;

@@ -1,7 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "menu.h"
 #include "menu_new_file.h"
 #include "procs/procs.h"
 
@@ -28,34 +27,33 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    data->gui.state = 1;
-
-    char **names = NULL;
-    void (**procs)(void) = NULL;
-    unsigned int count = 0;
-
-    char mask[64];
-    sprintf(mask, "%s*", DIR_TEMPLATES);
-    SIE_FILE *templates = Sie_FS_FindFiles(mask);
-    if (templates) {
-        M_AddMenuItem("Новый файл", CreateMenuNewFile);
-        Sie_FS_DestroyFiles(templates);
-    }
-    M_AddMenuItem("Новую папку", CreateDir);
-    data->menu = M_InitMenu();
-    M_DestroyMenuItems();
-
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     wsprintf(data->surface->hdr_ws, "%t", "Создать");
+
+    char mask[64];
+    SIE_MENU_LIST_ITEM item;
+    zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+    data->menu = Sie_Menu_List_Init(data->gui_id);
+    sprintf(mask, "%s*", DIR_TEMPLATES);
+    SIE_FILE *templates = Sie_FS_FindFiles(mask);
+    if (templates) {
+        item.proc = CreateMenuNewFile;
+        Sie_Menu_List_AddItem(data->menu, &item, "Новый файл");
+        Sie_FS_DestroyFiles(templates);
+    }
+    item.proc = CreateDir;
+    Sie_Menu_List_AddItem(data->menu, &item, "Новую папку");
+
+    data->gui.state = 1;
 }
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
-    DestroyMenu(data->menu);
+    Sie_Menu_List_Destroy(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
     GUI_STACK = Sie_GUI_Stack_Pop(GUI_STACK, data->gui_id);
 }

@@ -11,7 +11,7 @@ static void MsgProc(int flag, void *data) {
     }
 }
 
-void Delete(void) {
+void Delete() {
     SIE_GUI_MSG_BOX_CALLBACK callback;
     zeromem(&callback, sizeof(SIE_GUI_MSG_BOX_CALLBACK));
     callback.proc = MsgProc;

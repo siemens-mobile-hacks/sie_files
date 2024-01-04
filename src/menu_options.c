@@ -1,7 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "menu.h"
+#include "menu_view.h"
 #include "path_stack.h"
 #include "menu_create.h"
 #include "menu_set_as.h"
@@ -32,55 +32,67 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    char **names = NULL;
-    void (**procs)(void) = NULL;
-    unsigned int count = 0;
-
-    void AddPasteItem(void) {
-        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
-            M_AddMenuItem("Вставить", Paste);
-        }
-    }
-
-    if (!strlen(PATH_STACK->dir_name)) { // диски
-        M_AddMenuItem("Информация о диске", CreateDiskInfoGUI);
-    } else if (CURRENT_FILE) { // каталог или файл
-        AddPasteItem();
-        M_AddMenuItem("Создать", CreateMenuCreate);
-        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
-            M_AddMenuItem("Копировать", CopyFile);
-            M_AddMenuItem("Переместить", MoveFile);
-            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
-            if (uid) {
-                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                    M_AddMenuItem("Задать как...", CreateMenuSetAs);
-                }
-            }
-        }
-        else { // dir
-            M_AddMenuItem("Копировать", CopyFile);
-            M_AddMenuItem("Переместить", MoveFile);
-        }
-        M_AddMenuItem("Удалить", Delete);
-    } else { // empty :-)
-        AddPasteItem();
-        M_AddMenuItem("Создать", CreateMenuCreate);
-    }
-    data->menu = M_InitMenu();
-    M_DestroyMenuItems();
-
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     wsprintf(data->surface->hdr_ws, "%t", "Опции");
+
+    SIE_MENU_LIST_ITEM item;
+    zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+    data->menu = Sie_Menu_List_Init(data->gui_id);
+
+    void AddPasteItem(void) {
+        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
+            item.proc = Paste;
+            Sie_Menu_List_AddItem(data->menu, &item, "Вставить");
+        }
+    }
+
+    if (!strlen(PATH_STACK->dir_name)) { // диски
+        item.proc = CreateDiskInfoGUI;
+        Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
+    } else if (CURRENT_FILE) { // каталог или файл
+        AddPasteItem();
+        item.proc = CreateMenuView;
+        Sie_Menu_List_AddItem(data->menu, &item, "Вид");
+        item.proc = CreateMenuCreate;
+        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
+        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
+            item.proc = CopyFile;
+            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
+            item.proc = MoveFile;
+            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
+            if (uid) {
+                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
+                    item.proc = CreateMenuSetAs;
+                    Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
+                }
+            }
+        }
+        else { // dir
+            item.proc = CopyFile;
+            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
+            item.proc = MoveFile;
+            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+        }
+        item.proc = Delete;
+        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
+    } else { // empty :-)
+        AddPasteItem();
+        item.proc = Delete;
+        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
+        item.proc = CreateMenuCreate;
+        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
+    }
     data->gui.state = 1;
 }
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
-    DestroyMenu(data->menu);
+    Sie_Menu_List_Destroy(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
     GUI_STACK = Sie_GUI_Stack_Pop(GUI_STACK, data->gui_id);
 }
