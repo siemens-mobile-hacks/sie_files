@@ -85,10 +85,10 @@ SIE_MENU_LIST_ITEM *InitRootItems(MAIN_GUI *data, unsigned int *count) {
     SIE_MENU_LIST_ITEM *items = malloc(sizeof(SIE_MENU_LIST_ITEM) * c);
     zeromem(items, (int)(sizeof(SIE_MENU_LIST_ITEM) * c));
     for (int i = 0; i < c; i++) {
-        SIE_RESOURCES_EXT *res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,
+        SIE_RESOURCES_IMG *res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,
                                                              images[i]);
-        if (res_ext) {
-            items[i].icon = res_ext->icon;
+        if (res_img) {
+            items[i].icon = res_img->icon;
         }
         items[i].ws = AllocWS(32);
         wsprintf(items[i].ws, "%s", names[i]);
@@ -111,23 +111,23 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         zeromem(item, sizeof(SIE_MENU_LIST_ITEM));
 
         // icon
-        SIE_RESOURCES_EXT *res_ext = NULL;
+        SIE_RESOURCES_IMG *res_img = NULL;
         if (file->file_attr & FA_DIRECTORY) {
-            res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
+            res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
             char *ext = Sie_Ext_GetExtByFileName(file->file_name);
             if (ext) {
-                res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, ext);
-                if (!res_ext) {
-                    res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
+                res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, ext);
+                if (!res_img) {
+                    res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
                 }
                 mfree(ext);
             } else {
-                res_ext = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
+                res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
             }
         }
-        if (res_ext) {
-            item->icon = res_ext->icon;
+        if (res_img) {
+            item->icon = res_img->icon;
         }
         // ws
         size_t len = strlen(file->file_name);
@@ -404,6 +404,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
                 }
+                CURRENT_FILE = Sie_FS_GetFileByID(csm->main_gui->files, row);
                 FreeWS(ipc->data);
             }
         }
