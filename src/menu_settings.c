@@ -1,10 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "menu_settings.h"
-#include "path_stack.h"
-#include "menu_create.h"
-#include "menu_set_as.h"
 #include "procs/procs.h"
 
 typedef struct {
@@ -19,10 +15,8 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 /**********************************************************************************************************************/
 
 extern RECT canvas;
-extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *COPY_FILES, *MOVE_FILES;
-extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
+extern unsigned int SHOW_HIDDEN_FILES;
 
 /**********************************************************************************************************************/
 
@@ -37,56 +31,16 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             (int(*)(void *, GUI_MSG *msg))_OnKey,
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-    wsprintf(data->surface->hdr_ws, "%t", "Опции");
+    wsprintf(data->surface->hdr_ws, "%t", "Настройки");
 
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->gui_id);
+    item.type = SIE_MENU_LIST_ITEM_TYPE_CHECKBOX;
+    item.flag = SHOW_HIDDEN_FILES;
+    item.proc = ToggleHiddenFiles;
+    Sie_Menu_List_AddItem(data->menu, &item, "Отображать скрытые файлы");
 
-    void AddPasteItem(void) {
-        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
-            item.proc = Paste;
-            Sie_Menu_List_AddItem(data->menu, &item, "Вставить");
-        }
-    }
-
-    if (!strlen(PATH_STACK->dir_name)) { // диски
-        item.proc = CreateDiskInfoGUI;
-        Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
-    } else if (CURRENT_FILE) { // каталог или файл
-        AddPasteItem();
-        item.proc = CreateMenuCreate;
-        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
-            item.proc = CopyFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
-            item.proc = MoveFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
-            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
-            if (uid) {
-                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                    item.proc = CreateMenuSetAs;
-                    Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
-                }
-            }
-        }
-        else { // dir
-            item.proc = CopyFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
-            item.proc = MoveFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
-        }
-        item.proc = Delete;
-        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
-    } else { // empty :-)
-        AddPasteItem();
-        item.proc = Delete;
-        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
-        item.proc = CreateMenuCreate;
-        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-    }
-    item.proc = CreateMenuSettings;
-    Sie_Menu_List_AddItem(data->menu, &item, "Настройки");
     data->gui.state = 1;
 }
 
@@ -143,7 +97,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuOptions() {
+void CreateMenuSettings() {
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));

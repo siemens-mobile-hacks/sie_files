@@ -38,6 +38,8 @@ path_stack_t *PATH_STACK;
 unsigned int MAIN_GUI_ID;
 SIE_GUI_STACK *GUI_STACK;
 
+unsigned int SHOW_HIDDEN_FILES = 1;
+
 const char *DIR_ROOT = "0:\\zbin\\usr\\sie_files\\";
 const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
 
@@ -105,6 +107,11 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
     SIE_FILE *file = top;
     unsigned int i = 0;
     while (file) {
+        if (!SHOW_HIDDEN_FILES && file->file_attr & FA_HIDDEN) { // pass hidden files
+            file = file->next;
+            continue;
+        }
+
         SIE_MENU_LIST_ITEM *item;
         items = realloc(items, sizeof(SIE_MENU_LIST_ITEM) * (i + 1));
         item = &(items[i]);
