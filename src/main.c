@@ -48,6 +48,11 @@ const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
 SIE_FILE *InitRootFiles() {
     const int count = Sie_FS_MMCardExists() ? 4 : 3;
     const char *names[] = {"0:", "1:", "2:", "4:"};
+    const int attrs[] = {SIE_FS_FA_VOLUME,
+                         SIE_FS_FA_HIDDEN + SIE_FS_FA_VOLUME,
+                         SIE_FS_FA_HIDDEN + SIE_FS_FA_VOLUME,
+                         SIE_FS_FA_VOLUME,
+                         };
 
     size_t len;
     SIE_FILE *prev = NULL;
@@ -55,13 +60,12 @@ SIE_FILE *InitRootFiles() {
     for (int i = 0; i < count; i++) {
         current = malloc(sizeof(SIE_FILE));
         zeromem(current, sizeof(SIE_FILE));
-
         current->dir_name = malloc(1);
         current->dir_name[0] = '\0';
         len = strlen(names[i]);
         current->file_name = malloc(len + 1);
         strcpy(current->file_name, names[i]);
-        current->file_attr = FA_DIRECTORY;
+        current->file_attr = attrs[i];
         if (prev) {
             current->prev = prev;
             prev->next = current;
@@ -77,26 +81,6 @@ SIE_FILE *InitRootFiles() {
     }
     CURRENT_FILE = p;
     return p;
-}
-
-SIE_MENU_LIST *InitRootMenu() {
-    SIE_MENU_LIST *menu = Sie_Menu_List_Init(MAIN_GUI_ID);
-
-    const int c = Sie_FS_MMCardExists() ? 4 : 3;
-    const char *names[] = {"Data", "Cache", "Config", "MMCard"};
-    const char *images[] = {"drive", "drive", "drive", "mmcard"};
-
-    for (int i = 0; i < c; i++) {
-        SIE_MENU_LIST_ITEM item;
-        SIE_RESOURCES_IMG *res_img;
-        zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
-        res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24,images[i]);
-        if (res_img) {
-            item.icon = res_img->icon;
-        }
-        Sie_Menu_List_AddItem(menu, &item, names[i]);
-    }
-    return menu;
 }
 
 SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
@@ -119,7 +103,16 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
 
         // icon
         SIE_RESOURCES_IMG *res_img = NULL;
-        if (file->file_attr & FA_DIRECTORY) {
+        if (file->file_attr & SIE_FS_FA_VOLUME) {
+            char name[8];
+            if (strcmp(file->file_name, "4:")) {
+                strcpy(name, "disk");
+            } else {
+                strcpy(name, "mmcard");
+            }
+            res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_DEVICES, 24, name);
+        }
+        else if (file->file_attr & SIE_FS_FA_DIRECTORY) {
             res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
             char *ext = Sie_Ext_GetExtByFileName(file->file_name);
@@ -187,7 +180,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 
     if (!strlen(p->dir_name)) { // root
         data->files = InitRootFiles();
-        MENU = InitRootMenu();
+        MENU->items = InitItems(data->files, &(MENU->n_items));
         MENU->row = p->row;
     } else {
         char *mask = NULL;
@@ -207,6 +200,9 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
         }
         Sie_Menu_List_Refresh(MENU);
         mfree(mask);
+    }
+    if (MENU->row >= MENU->n_items) {
+        MENU->row = 0;
     }
     UpdateHeader(data);
 }
@@ -229,7 +225,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     };
     data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     data->files = InitRootFiles();
-    MENU = InitRootMenu();
+    ChangeDir(data, "");
     UpdateHeader(data);
 
     data->gui.state = 1;
@@ -280,7 +276,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                         file = Sie_FS_GetFileByFileName(data->files, path);
                     }
                     if (file) {
-                        if (file->file_attr & FA_DIRECTORY) {
+                        if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
                             sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
                             //data->path_list_last->row = data->menu->row;
                             ChangeDir(data, path);
@@ -407,6 +403,8 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                     Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
+                } else {
+                    ShowMSG(1, (int)err);
                 }
                 CURRENT_FILE = Sie_FS_GetFileByID(csm->main_gui->files, row);
                 FreeWS(ipc->data);
