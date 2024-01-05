@@ -48,6 +48,7 @@ const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
 SIE_FILE *InitRootFiles() {
     const int count = Sie_FS_MMCardExists() ? 4 : 3;
     const char *names[] = {"0:", "1:", "2:", "4:"};
+    const char *aliases[] = {"Data", "Cache", "Config", "MMCard"};
     const int attrs[] = {SIE_FS_FA_VOLUME,
                          SIE_FS_FA_HIDDEN + SIE_FS_FA_VOLUME,
                          SIE_FS_FA_HIDDEN + SIE_FS_FA_VOLUME,
@@ -65,6 +66,9 @@ SIE_FILE *InitRootFiles() {
         len = strlen(names[i]);
         current->file_name = malloc(len + 1);
         strcpy(current->file_name, names[i]);
+        len = strlen(aliases[i]);
+        current->alias = malloc(len + 1);
+        strcpy(current->alias, aliases[i]);
         current->file_attr = attrs[i];
         if (prev) {
             current->prev = prev;
@@ -105,10 +109,10 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         SIE_RESOURCES_IMG *res_img = NULL;
         if (file->file_attr & SIE_FS_FA_VOLUME) {
             char name[8];
-            if (strcmp(file->file_name, "4:")) {
-                strcpy(name, "disk");
-            } else {
+            if (strcmp(file->file_name, "4:") == 0) {
                 strcpy(name, "mmcard");
+            } else {
+                strcpy(name, "disk");
             }
             res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_DEVICES, 24, name);
         }
@@ -130,9 +134,10 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
             item->icon = res_img->icon;
         }
         // ws
-        size_t len = strlen(file->file_name);
-        item->ws = AllocWS((int)(len + 1));
-        str_2ws(item->ws, file->file_name, len);
+        char *name = (file->alias) ? file->alias : file->file_name;
+        size_t len = strlen(name);
+        item->ws = AllocWS(len);
+        str_2ws(item->ws, name, len);
         // color
         if (file->file_attr & FA_HIDDEN) {
             item->color = color_hidden;
@@ -267,13 +272,12 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 break;
             case SIE_MENU_LIST_KEY_ENTER:
                 if (MENU->n_items) {
-                    SIE_FILE *file = NULL;
-                    if (!strlen(PATH_STACK->dir_name)) { // root
-                        file = Sie_FS_GetFileByID(data->files, MENU->row);
-                    } else {
-                        WSHDR *ws = MENU->items[MENU->row].ws;
-                        ws_2str(ws, path, wstrlen(ws));
-                        file = Sie_FS_GetFileByFileName(data->files, path);
+                    SIE_FILE *file;
+                    WSHDR *ws = MENU->items[MENU->row].ws;
+                    ws_2str(ws, path, wstrlen(ws));
+                    file = Sie_FS_GetFileByFileName(data->files, path);
+                    if (!file) {
+                        file = Sie_FS_GetFileByAlias(data->files, path);
                     }
                     if (file) {
                         if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
