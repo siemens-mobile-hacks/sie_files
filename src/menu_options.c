@@ -31,6 +31,20 @@ static void OnRedraw(MAIN_GUI *data) {
     Sie_Menu_List_Draw(data->menu);
 }
 
+#define ADD_PASTE_ITEM() { \
+            if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) { \
+                item.proc = Paste; \
+                Sie_Menu_List_AddItem(data->menu, &item, "Вставить"); \
+            } \
+        }
+
+#define ADD_COPY_AND_MOVE_ITEMS() { \
+            item.proc = CopyFile; \
+            Sie_Menu_List_AddItem(data->menu, &item, "Копировать"); \
+            item.proc = MoveFile; \
+            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");\
+        }
+
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
@@ -42,26 +56,15 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->gui_id);
-
-    void AddPasteItem(void) {
-        if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) {
-            item.proc = Paste;
-            Sie_Menu_List_AddItem(data->menu, &item, "Вставить");
-        }
-    }
-
-    if (!strlen(PATH_STACK->dir_name)) { // диски
+    if (!strlen(PATH_STACK->dir_name)) { // disks
         item.proc = CreateDiskInfoGUI;
         Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
-    } else if (CURRENT_FILE) { // каталог или файл
-        AddPasteItem();
+    } else if (CURRENT_FILE) { // dir or file
+        ADD_PASTE_ITEM();
         item.proc = CreateMenuCreate;
         Sie_Menu_List_AddItem(data->menu, &item, "Создать");
         if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // файл
-            item.proc = CopyFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
-            item.proc = MoveFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+            ADD_COPY_AND_MOVE_ITEMS();
             int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
             if (uid) {
                 if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
@@ -71,15 +74,12 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             }
         }
         else { // dir
-            item.proc = CopyFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
-            item.proc = MoveFile;
-            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+            ADD_COPY_AND_MOVE_ITEMS();
         }
         item.proc = Delete;
         Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
     } else { // empty :-)
-        AddPasteItem();
+        ADD_PASTE_ITEM();
         item.proc = Delete;
         Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
         item.proc = CreateMenuCreate;
