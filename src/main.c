@@ -95,7 +95,7 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
     SIE_FILE *file = top;
     unsigned int i = 0;
     while (file) {
-        if (!SHOW_HIDDEN_FILES && file->file_attr & FA_HIDDEN) { // pass hidden files
+        if (!SHOW_HIDDEN_FILES && file->file_attr & SIE_FS_FA_HIDDEN) { // pass hidden files
             file = file->next;
             continue;
         }
@@ -139,7 +139,7 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         item->ws = AllocWS(len);
         str_2ws(item->ws, name, len);
         // color
-        if (file->file_attr & FA_HIDDEN) {
+        if (file->file_attr & SIE_FS_FA_HIDDEN) {
             item->color = color_hidden;
         }
         file = file->next;
@@ -156,10 +156,10 @@ inline char GetAttr(int attr, char c) {
 void UpdateHeader(MAIN_GUI *data) {
     if (CURRENT_FILE) {
         wsprintf(data->surface->hdr_ws, "%c%c%c%c\t%d/%d",
-                 GetAttr(FA_READONLY, 'r'),
-                 GetAttr(FA_HIDDEN, 'h'),
-                 GetAttr(FA_SYSTEM, 's'),
-                 GetAttr(FA_DIRECTORY, 'd'),
+                 GetAttr(SIE_FS_FA_READONLY, 'r'),
+                 GetAttr(SIE_FS_FA_HIDDEN, 'h'),
+                 GetAttr(SIE_FS_FA_SYSTEM, 's'),
+                 GetAttr(SIE_FS_FA_DIRECTORY, 'd'),
                  MENU->row + 1, MENU->n_items);
     } else {
         wsprintf(data->surface->hdr_ws, "");

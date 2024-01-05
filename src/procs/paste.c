@@ -25,7 +25,7 @@ static void MsgProc(int flag, void *data) {
         if (flag == SIE_GUI_MSG_BOX_CALLBACK_NO) {
             SIE_FILE *file = GetUniqueFileInCurrentDir(p);
             char *path = Sie_FS_GetPathByFile(file);
-            if (p->file_attr & FA_DIRECTORY) {
+            if (p->file_attr & SIE_FS_FA_DIRECTORY) {
                 // CopyFileRecursive
                 ShowMSG(1, (int)"Is directory");
             } else {

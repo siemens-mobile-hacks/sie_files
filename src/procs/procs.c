@@ -83,7 +83,7 @@ void DeleteFiles(const SIE_FILE *files) {
     SIE_FILE *p = (SIE_FILE*)files;
     while (p != NULL) {
         char *path = Sie_FS_GetPathByFile(p);
-        if (p->file_attr & FA_DIRECTORY) {
+        if (p->file_attr & SIE_FS_FA_DIRECTORY) {
             Sie_FS_RemoveDirRecursive(path);
         } else {
             _unlink(path, &err);

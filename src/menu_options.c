@@ -57,7 +57,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         AddPasteItem();
         item.proc = CreateMenuCreate;
         Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-        if (!(CURRENT_FILE->file_attr & FA_DIRECTORY)) { // файл
+        if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // файл
             item.proc = CopyFile;
             Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
             item.proc = MoveFile;
