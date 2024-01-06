@@ -415,8 +415,6 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                     Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
-                } else {
-                    ShowMSG(1, (int)err);
                 }
                 CURRENT_FILE = Sie_FS_GetFileByID(csm->main_gui->files, row);
                 FreeWS(ipc->data);

@@ -2,12 +2,12 @@
 #include "procs.h"
 #include "../ipc.h"
 
-SIE_GUI_BOX_GUI *BOX_GUI;
-
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_GUI_STACK *GUI_STACK;
 
-char *GetMsg(unsigned int id) {
+SIE_GUI_BOX_GUI *BOX_GUI;
+
+static char *GetMsg(unsigned int id) {
     static char msg[64];
     static int count = 0;
     if (!count) {
