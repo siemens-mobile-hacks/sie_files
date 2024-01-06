@@ -47,7 +47,8 @@ static void Update(SIE_FILE *file, unsigned int id) {
 
 static void SUBPROC_Paste(void) {
     unsigned int id = 0;
-    SIE_FILE *file = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
+    SIE_FILE *files = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
+    SIE_FILE *file = files;
     while (1) {
         if (WAIT == 1) {
             NU_Sleep(50);
@@ -83,8 +84,6 @@ static void SUBPROC_Paste(void) {
                 char *src = Sie_FS_GetPathByFile(file);
                 if (COPY_FILES) {
                     Sie_FS_CopyFile(src, dest);
-                    Sie_FS_DestroyFiles(COPY_FILES);
-                    COPY_FILES = NULL;
                 } else {
                     unsigned int err;
                     fmove(src, dest, &err);
@@ -93,7 +92,6 @@ static void SUBPROC_Paste(void) {
             }
             mfree(dest);
         }
-
         END:
         Update(file, id++);
         if (file->next) {
@@ -104,8 +102,11 @@ static void SUBPROC_Paste(void) {
     size_t len = strlen(file->file_name);
     WSHDR *ws = AllocWS(len);
     str_2ws(ws, file->file_name, len);
-    IPC_CloseChildrenGUI(1);
+    IPC_CloseChildrenGUI(0);
     IPC_SetRowByFileName_ws(ws);
+    BOX_GUI = NULL;
+
+    Sie_FS_DestroyFiles(files);
     COPY_FILES = MOVE_FILES = NULL;
 }
 

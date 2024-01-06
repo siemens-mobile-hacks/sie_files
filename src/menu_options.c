@@ -80,8 +80,6 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
     } else { // empty :-)
         ADD_PASTE_ITEM();
-        item.proc = Delete;
-        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
         item.proc = CreateMenuCreate;
         Sie_Menu_List_AddItem(data->menu, &item, "Создать");
     }
