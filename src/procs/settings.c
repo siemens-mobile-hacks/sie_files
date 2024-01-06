@@ -8,6 +8,5 @@ extern unsigned int SHOW_HIDDEN_FILES;
 void ToggleHiddenFiles(SIE_MENU_LIST_ITEM *item, unsigned int row) {
     item->flag = !item->flag;
     SHOW_HIDDEN_FILES = item->flag;
-    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
-    IPC_Redraw();
+    IPC_CloseChildrenGUI(1);
 }

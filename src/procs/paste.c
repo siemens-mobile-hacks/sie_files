@@ -7,8 +7,6 @@
 
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 extern path_stack_t *PATH_STACK;
-extern unsigned int MAIN_GUI_ID;
-extern SIE_GUI_STACK *GUI_STACK;
 
 void Redraw(const char *file_name) {
     size_t len = strlen(file_name);
@@ -22,7 +20,7 @@ static void MsgProc(int flag, void *data) {
     SIE_FILE *p = Sie_FS_DeleteFileElement(top, (SIE_FILE*)data);
     if (p) {
         char *src = Sie_FS_GetPathByFile(p);
-        if (flag == SIE_GUI_MSG_BOX_CALLBACK_NO) {
+        if (flag == SIE_GUI_BOX_CALLBACK_NO) {
             SIE_FILE *file = GetUniqueFileInCurrentDir(p);
             char *path = Sie_FS_GetPathByFile(file);
             if (p->file_attr & SIE_FS_FA_DIRECTORY) {
@@ -72,10 +70,10 @@ void Paste() {
                 sprintf(dest, "%s%s", PATH_STACK->dir_name, p->file_name);
                 if (Sie_FS_FileExists(dest)) {
                     mfree(dest);
-                    SIE_GUI_MSG_BOX_CALLBACK callback;
+                    SIE_GUI_BOX_CALLBACK callback;
                     callback.proc = MsgProc;
                     callback.data = p;
-                    Sie_GUI_MsgBox("Файл существует", "Заменить", "Вставить", &callback);
+                    Sie_GUI_Box("Файл существует", "Заменить", "Вставить", &callback);
                     if (!next) {
                         break;
                     }
@@ -109,5 +107,5 @@ void Paste() {
             p = next;
         }
     }
-    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
+    IPC_CloseChildrenGUI(0);
 }

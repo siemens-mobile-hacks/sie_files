@@ -10,6 +10,7 @@
 
 typedef struct {
     GUI gui;
+    unsigned int gui_id;
     SIE_FILE *files;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
@@ -17,7 +18,6 @@ typedef struct {
 typedef struct {
     CSM_RAM csm;
     MAIN_GUI *main_gui;
-    int gui_id;
 } MAIN_CSM;
 
 
@@ -35,7 +35,6 @@ SIE_MENU_LIST *MENU;
 SIE_FILE *CURRENT_FILE;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
 path_stack_t *PATH_STACK;
-unsigned int MAIN_GUI_ID;
 SIE_GUI_STACK *GUI_STACK;
 
 unsigned int SHOW_HIDDEN_FILES = 1;
@@ -170,7 +169,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_FS_DestroyFiles(data->files);
     data->files = NULL;
     Sie_Menu_List_Destroy(MENU);
-    MENU = Sie_Menu_List_Init(MAIN_GUI_ID);
+    MENU = Sie_Menu_List_Init(data->gui_id);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -203,9 +202,9 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
         } else {
             CURRENT_FILE = NULL;
         }
-        Sie_Menu_List_Refresh(MENU);
         mfree(mask);
     }
+    Sie_Menu_List_Refresh(MENU);
     if (MENU->row >= MENU->n_items) {
         MENU->row = 0;
     }
@@ -373,9 +372,9 @@ static void maincsm_oncreate(CSM_RAM *data) {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     csm->csm.state = 0;
     csm->csm.unk1 = 0;
-    MAIN_GUI_ID = csm->gui_id = CreateGUI(main_gui);
+    main_gui->gui_id = CreateGUI(main_gui);
     csm->main_gui = main_gui;
-    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), csm->gui_id);
+    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), csm->main_gui->gui_id);
 }
 
 void KillElf() {
@@ -389,16 +388,25 @@ static void maincsm_onclose(CSM_RAM *csm) {
 }
 
 static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
+#define Redraw() { \
+        ChangeDir(csm->main_gui, "."); \
+        DirectRedrawGUI();             \
+    }
+
     MAIN_CSM *csm = (MAIN_CSM*)data;
-    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->gui_id)) {
+    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->main_gui->gui_id)) {
         csm->csm.state = -3;
     }
     else if (msg->msg == MSG_IPC) {
         IPC_REQ *ipc = (IPC_REQ*)msg->data0;
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
             if (msg->submess == IPC_REDRAW) {
-                ChangeDir(csm->main_gui, ".");
-                DirectRedrawGUI();
+                Redraw();
+            } else if (msg->submess == IPC_CLOSE_CHILDREN_GUI) {
+                GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, csm->main_gui->gui_id);
+                if ((unsigned int)ipc->data == 1) {
+                    Redraw();
+                }
             } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
                 unsigned int row = 0, err = 0;
                 ChangeDir(csm->main_gui, ".");

@@ -12,6 +12,5 @@ void CopyFile();
 void MoveFile();
 
 void SetAsWallpaper();
-void DeleteFiles(const SIE_FILE *files);
 
 #endif
