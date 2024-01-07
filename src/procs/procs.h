@@ -3,6 +3,7 @@
 
 #include "paste.h"
 #include "delete.h"
+#include "select.h"
 #include "settings.h"
 
 void CreateDiskInfoGUI();

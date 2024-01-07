@@ -33,6 +33,7 @@ RECT canvas = {0, 0, 0, 0};
 
 SIE_MENU_LIST *MENU;
 SIE_FILE *CURRENT_FILE;
+SIE_FILE *SELECTED_FILES;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
 path_stack_t *PATH_STACK;
 SIE_GUI_STACK *GUI_STACK;
@@ -82,7 +83,6 @@ SIE_FILE *InitRootFiles() {
         }
         p = p->prev;
     }
-    CURRENT_FILE = p;
     return p;
 }
 
@@ -165,9 +165,22 @@ void UpdateHeader(MAIN_GUI *data) {
     }
 }
 
+void SetCurrentFile(SIE_FILE *files, unsigned int id) {
+    if (CURRENT_FILE) {
+        Sie_FS_DestroyFileElement(CURRENT_FILE);
+        CURRENT_FILE = NULL;
+    }
+    SIE_FILE *file = Sie_FS_GetFileByID(files, id);
+    if (file) {
+        CURRENT_FILE = Sie_FS_CopyFileElement(file);
+    }
+}
+
 void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_FS_DestroyFiles(data->files);
+    Sie_FS_DestroyFiles(SELECTED_FILES);
     data->files = NULL;
+    SELECTED_FILES = NULL;
     Sie_Menu_List_Destroy(MENU);
     MENU = Sie_Menu_List_Init(data->gui_id);
 
@@ -198,9 +211,6 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
                 p->row = MENU->n_items - 1;
             }
             MENU->row = p->row;
-            CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
-        } else {
-            CURRENT_FILE = NULL;
         }
         mfree(mask);
     }
@@ -208,6 +218,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     if (MENU->row >= MENU->n_items) {
         MENU->row = 0;
     }
+    SetCurrentFile(data->files, MENU->row);
     UpdateHeader(data);
 }
 
@@ -238,6 +249,10 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
     Sie_FS_DestroyFiles(data->files);
+    if (CURRENT_FILE) {
+        Sie_FS_DestroyFileElement(CURRENT_FILE);
+    }
+    Sie_FS_DestroyFiles(SELECTED_FILES);
     Sie_Menu_List_Destroy(MENU);
     DestroyPathStack(PATH_STACK);
     Sie_FT_Destroy();
@@ -265,36 +280,41 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
                 PATH_STACK->row = MENU->row;
-                CURRENT_FILE = Sie_FS_GetFileByID(data->files, MENU->row);
+                SetCurrentFile(data->files, MENU->row);
                 UpdateHeader(data);
                 Sie_GUI_Surface_Draw(data->surface);
                 break;
             case SIE_MENU_LIST_KEY_ENTER:
                 if (MENU->n_items) {
-                    SIE_FILE *file;
-                    WSHDR *ws = MENU->items[MENU->row].ws;
-                    ws_2str(ws, path, wstrlen(ws));
-                    file = Sie_FS_GetFileByFileName(data->files, path);
-                    if (!file) {
-                        file = Sie_FS_GetFileByAlias(data->files, path);
-                    }
-                    if (file) {
-                        if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
-                            sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
-                            //data->path_list_last->row = data->menu->row;
-                            ChangeDir(data, path);
-                            Sie_GUI_Surface_Draw(data->surface);
-                            Sie_Menu_List_Draw(MENU);
-                        } else {
-                            WSHDR *ws = AllocWS(12);
-                            size_t len;
-                            sprintf(path, "%s%s", PATH_STACK->dir_name, file->file_name);
-                            len = strlen(path);
-                            ws = AllocWS((int)(len + 1));
-                            str_2ws(ws, path, len);
-                            ExecuteFile(ws, NULL, NULL);
-                            FreeWS(ws);
+                    if (!SELECTED_FILES) {
+                        SIE_FILE *file;
+                        WSHDR *ws = MENU->items[MENU->row].ws;
+                        ws_2str(ws, path, wstrlen(ws));
+                        file = Sie_FS_GetFileByFileName(data->files, path);
+                        if (!file) {
+                            file = Sie_FS_GetFileByAlias(data->files, path);
                         }
+                        if (file) {
+                            if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
+                                sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
+                                //data->path_list_last->row = data->menu->row;
+                                ChangeDir(data, path);
+                                Sie_GUI_Surface_Draw(data->surface);
+                                Sie_Menu_List_Draw(MENU);
+                            } else {
+                                WSHDR *ws = AllocWS(12);
+                                size_t len;
+                                sprintf(path, "%s%s", PATH_STACK->dir_name, file->file_name);
+                                len = strlen(path);
+                                ws = AllocWS((int) (len + 1));
+                                str_2ws(ws, path, len);
+                                ExecuteFile(ws, NULL, NULL);
+                                FreeWS(ws);
+                            }
+                        }
+                    }
+                    else {
+                        ToggleSelect();
                     }
                 }
                 break;
@@ -309,6 +329,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     Sie_GUI_Surface_Draw(data->surface);
                     Sie_Menu_List_Draw(MENU);
                 }
+                break;
+            case '*':
+                ToggleSelect();
                 break;
             case '#':
                 if (CURRENT_FILE) {
@@ -416,7 +439,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
                 }
-                CURRENT_FILE = Sie_FS_GetFileByID(csm->main_gui->files, row);
+                SetCurrentFile(csm->main_gui->files, row);
                 FreeWS(ipc->data);
             }
         }

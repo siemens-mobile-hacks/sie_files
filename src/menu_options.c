@@ -1,10 +1,11 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "menu_settings.h"
+#include "helpers.h"
 #include "path_stack.h"
 #include "menu_create.h"
 #include "menu_set_as.h"
+#include "menu_settings.h"
 #include "procs/procs.h"
 
 typedef struct {
@@ -20,6 +21,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_FILE *CURRENT_FILE;
+extern SIE_FILE *SELECTED_FILES;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
@@ -31,14 +33,21 @@ static void OnRedraw(MAIN_GUI *data) {
     Sie_Menu_List_Draw(data->menu);
 }
 
-#define ADD_PASTE_ITEM() { \
+void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+    if (!IsSelectedCurrentFile()) {
+        item->proc = Select;
+        Sie_Menu_List_AddItem(menu, item, "Выделить");
+    }
+}
+
+#define AddPasteItem() { \
             if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) { \
                 item.proc = Paste; \
                 Sie_Menu_List_AddItem(data->menu, &item, "Вставить"); \
             } \
         }
 
-#define ADD_COPY_AND_MOVE_ITEMS() { \
+#define AddCopyAndMoveItems() { \
             item.proc = CopyFile; \
             Sie_Menu_List_AddItem(data->menu, &item, "Копировать"); \
             item.proc = MoveFile; \
@@ -60,26 +69,35 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         item.proc = CreateDiskInfoGUI;
         Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
     } else if (CURRENT_FILE) { // dir or file
-        ADD_PASTE_ITEM();
-        item.proc = CreateMenuCreate;
-        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-        if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // файл
-            ADD_COPY_AND_MOVE_ITEMS();
-            int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
-            if (uid) {
-                if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                    item.proc = CreateMenuSetAs;
-                    Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
+        if (!SELECTED_FILES) {
+            AddPasteItem();
+            item.proc = CreateMenuCreate;
+            Sie_Menu_List_AddItem(data->menu, &item, "Создать");
+            AddSelectItem(data->menu, &item);
+            if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // файл
+                AddCopyAndMoveItems();
+                int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
+                if (uid) {
+                    if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
+                        item.proc = CreateMenuSetAs;
+                        Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
+                    }
                 }
+            } else { // dir
+                AddCopyAndMoveItems();
             }
+        } else {
+            AddSelectItem(data->menu, &item);
+            AddCopyAndMoveItems();
         }
-        else { // dir
-            ADD_COPY_AND_MOVE_ITEMS();
+        if (SELECTED_FILES) {
+            item.proc = UnSelectAll;
+            Sie_Menu_List_AddItem(data->menu, &item, "Отменить все выделения");
         }
         item.proc = Delete;
         Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
     } else { // empty :-)
-        ADD_PASTE_ITEM();
+        AddPasteItem();
         item.proc = CreateMenuCreate;
         Sie_Menu_List_AddItem(data->menu, &item, "Создать");
     }
