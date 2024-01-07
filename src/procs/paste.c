@@ -11,6 +11,7 @@ extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
 unsigned int WAIT = 0;
 SIE_GUI_BOX_GUI *BOX_GUI;
+char LAST_FILE_NAME[512];
 
 static char *GetMsg(unsigned int id) {
     static char msg[64];
@@ -34,6 +35,7 @@ static void BoxProc(int flag, void *data) {
             Sie_FS_CopyFile(src, dest);
         }
         mfree(dest);
+        strcpy(LAST_FILE_NAME, new_file->file_name);
         Sie_FS_DestroyFileElement(new_file);
     }
     mfree(src);
@@ -49,6 +51,7 @@ static void SUBPROC_Paste(void) {
     unsigned int id = 0;
     SIE_FILE *files = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
     SIE_FILE *file = files;
+
     while (1) {
         if (WAIT == 1) {
             NU_Sleep(50);
@@ -59,15 +62,17 @@ static void SUBPROC_Paste(void) {
         }
 
         const char *dir_name = PATH_STACK->dir_name;
-        if (strcmpi(file->dir_name, dir_name) == 0) { // current dir
+        if (strcmp(file->dir_name, dir_name) == 0) { // current dir
             SIE_FILE *new_file = GetUniqueFileInCurrentDir(file);
             char *dest = Sie_FS_GetPathByFile(new_file);
             if (COPY_FILES) {
-                char *src = Sie_FS_GetPathByFile(new_file);
+                char *src = Sie_FS_GetPathByFile(file);
                 Sie_FS_CopyFile(src, dest);
                 mfree(src);
             }
             mfree(dest);
+            strcpy(LAST_FILE_NAME, new_file->file_name);
+            Sie_FS_DestroyFileElement(new_file);
         } else {
             char *dest = malloc(strlen(dir_name) + strlen(file->file_name) + 1);
             sprintf(dest, "%s%s", dir_name, file->file_name);
@@ -89,6 +94,7 @@ static void SUBPROC_Paste(void) {
                     fmove(src, dest, &err);
                 }
                 mfree(src);
+                strcpy(LAST_FILE_NAME, file->file_name);
             }
             mfree(dest);
         }
@@ -99,18 +105,20 @@ static void SUBPROC_Paste(void) {
         } else break;
     }
 
-    size_t len = strlen(file->file_name);
-    WSHDR *ws = AllocWS(len);
-    str_2ws(ws, file->file_name, len);
-    IPC_CloseChildrenGUI(0);
-    IPC_SetRowByFileName_ws(ws);
+    size_t len = strlen(LAST_FILE_NAME);
+    if (len) {
+        WSHDR *ws = AllocWS(len);
+        str_2ws(ws, LAST_FILE_NAME, len);
+        IPC_CloseChildrenGUI(1);
+        IPC_SetRowByFileName_ws(ws);
+    }
     BOX_GUI = NULL;
-
     Sie_FS_DestroyFiles(files);
     COPY_FILES = MOVE_FILES = NULL;
 }
 
 void Paste(void) {
+    LAST_FILE_NAME[0] = '\0';
     BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
     SUBPROC(SUBPROC_Paste);
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);

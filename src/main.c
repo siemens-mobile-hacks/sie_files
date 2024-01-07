@@ -198,7 +198,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     if (!strlen(p->dir_name)) { // root
         data->files = InitRootFiles();
         MENU->items = InitItems(data->files, &(MENU->n_items));
-        MENU->row = p->row;
+        p->row = Sie_Menu_List_SetRow(MENU, p->row);
     } else {
         char *mask = NULL;
         mask = malloc(strlen(p->dir_name) + 1 + 1);
@@ -207,17 +207,11 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
         data->files = Sie_FS_SortFilesByName(data->files, 1);
         if (data->files) {
             MENU->items = InitItems(data->files, &(MENU->n_items));
-            if (p->row >= MENU->n_items) {
-                p->row = MENU->n_items - 1;
-            }
-            MENU->row = p->row;
+            p->row = Sie_Menu_List_SetRow(MENU, p->row);
         }
         mfree(mask);
     }
     Sie_Menu_List_Refresh(MENU);
-    if (MENU->row >= MENU->n_items) {
-        MENU->row = 0;
-    }
     SetCurrentFile(data->files, MENU->row);
     UpdateHeader(data);
 }
@@ -330,13 +324,12 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     Sie_Menu_List_Draw(MENU);
                 }
                 break;
+
             case '*':
                 ToggleSelect();
                 break;
             case '#':
-                if (CURRENT_FILE) {
-                    Delete();
-                }
+                Delete();
                 break;
         }
     }
@@ -410,12 +403,12 @@ static void maincsm_onclose(CSM_RAM *csm) {
     SUBPROC((void *)KillElf);
 }
 
-static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
-#define Redraw() { \
-        ChangeDir(csm->main_gui, "."); \
-        DirectRedrawGUI();             \
-    }
+void Reload(MAIN_GUI *data) {
+    ChangeDir(data, ".");
+    DirectRedrawGUI();
+}
 
+static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
     MAIN_CSM *csm = (MAIN_CSM*)data;
     if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->main_gui->gui_id)) {
         csm->csm.state = -3;
@@ -423,19 +416,19 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
     else if (msg->msg == MSG_IPC) {
         IPC_REQ *ipc = (IPC_REQ*)msg->data0;
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
-            if (msg->submess == IPC_REDRAW) {
-                Redraw();
+            if (msg->submess == IPC_RELOAD) {
+                Reload(csm->main_gui);
             } else if (msg->submess == IPC_CLOSE_CHILDREN_GUI) {
                 GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, csm->main_gui->gui_id);
                 if ((unsigned int)ipc->data == 1) {
-                    Redraw();
+                    Reload(csm->main_gui);
                 }
             } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
                 unsigned int row = 0, err = 0;
                 ChangeDir(csm->main_gui, ".");
                 row = Sie_Menu_List_GetIdByName_ws(MENU, ipc->data, &err);
                 if (!err) {
-                    Sie_Menu_List_SetRow(MENU, row);
+                    PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI();
                 }
@@ -444,7 +437,6 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
             }
         }
     }
-
     return 1;
 }
 

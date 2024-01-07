@@ -2,6 +2,7 @@
 #include "procs.h"
 #include "../ipc.h"
 
+extern SIE_MENU_LIST *MENU;
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_GUI_STACK *GUI_STACK;
 
@@ -56,8 +57,10 @@ static void BoxProc(int flag, void *data) {
 }
 
 void Delete() {
-    SIE_GUI_BOX_CALLBACK callback;
-    zeromem(&callback, sizeof(SIE_GUI_BOX_CALLBACK));
-    callback.proc = BoxProc;
-    Sie_GUI_MsgBoxYesNo("Удалить?", &callback);
+    if (CURRENT_FILE && !(CURRENT_FILE->file_attr & SIE_FS_FA_VOLUME)) {
+        SIE_GUI_BOX_CALLBACK callback;
+        zeromem(&callback, sizeof(SIE_GUI_BOX_CALLBACK));
+        callback.proc = BoxProc;
+        Sie_GUI_MsgBoxYesNo("Удалить?", &callback);
+    }
 }
