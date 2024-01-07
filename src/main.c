@@ -324,7 +324,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     Sie_Menu_List_Draw(MENU);
                 }
                 break;
-
+            case GREEN_BUTTON:
+                Paste();
+                break;
             case '*':
                 ToggleSelect();
                 break;

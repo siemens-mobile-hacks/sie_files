@@ -118,8 +118,10 @@ static void SUBPROC_Paste(void) {
 }
 
 void Paste(void) {
-    LAST_FILE_NAME[0] = '\0';
-    BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
-    SUBPROC(SUBPROC_Paste);
-    GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);
+    if (IsAllowPaste()) {
+        LAST_FILE_NAME[0] = '\0';
+        BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
+        SUBPROC(SUBPROC_Paste);
+        GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);
+    }
 }

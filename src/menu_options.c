@@ -40,12 +40,12 @@ void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     }
 }
 
-#define AddPasteItem() { \
-            if (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) { \
-                item.proc = Paste; \
-                Sie_Menu_List_AddItem(data->menu, &item, "Вставить"); \
-            } \
-        }
+inline void AddPasteItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+    if (IsAllowPaste()) {
+        item->proc = Paste;
+        Sie_Menu_List_AddItem(menu, item, "Вставить");
+    }
+}
 
 #define AddCopyAndMoveItems() { \
             item.proc = CopyFile; \
@@ -70,7 +70,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
     } else if (CURRENT_FILE) { // dir or file
         if (!SELECTED_FILES) {
-            AddPasteItem();
+            AddPasteItem(data->menu, &item);
             item.proc = CreateMenuCreate;
             Sie_Menu_List_AddItem(data->menu, &item, "Создать");
             AddSelectItem(data->menu, &item);
@@ -97,7 +97,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         item.proc = Delete;
         Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
     } else { // empty :-)
-        AddPasteItem();
+        AddPasteItem(data->menu, &item);
         item.proc = CreateMenuCreate;
         Sie_Menu_List_AddItem(data->menu, &item, "Создать");
     }

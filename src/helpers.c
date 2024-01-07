@@ -7,6 +7,7 @@
 extern path_stack_t *PATH_STACK;
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
+extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
 SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
     SIE_FILE *f = Sie_FS_CopyFileElement(file);
@@ -21,4 +22,8 @@ SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
 
 inline unsigned int IsSelectedCurrentFile() {
     return Sie_FS_ContainsFile(SELECTED_FILES, CURRENT_FILE);
+}
+
+inline unsigned int IsAllowPaste() {
+    return (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name)));
 }
