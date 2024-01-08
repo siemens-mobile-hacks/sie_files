@@ -4,17 +4,15 @@
 
 extern SIE_MENU_LIST *MENU;
 extern SIE_FILE *CURRENT_FILE;
+extern SIE_FILE *SELECTED_FILES;
 extern SIE_GUI_STACK *GUI_STACK;
 
+int COUNT;
 SIE_GUI_BOX_GUI *BOX_GUI;
 
 static char *GetMsg(SIE_FILE *files, unsigned int id) {
     static char msg[64];
-    static int count = 0;
-    if (!count) {
-        count = Sie_FS_GetFilesCount(files);
-    }
-    sprintf(msg, "Удаление файлов: %d/%d", id, count);
+    sprintf(msg, "Удаление файлов: %d/%d", id, COUNT);
     return msg;
 }
 
@@ -49,18 +47,26 @@ static void SUBPROC_Delete(SIE_FILE *files) {
 
 static void BoxProc(int flag, void *data) {
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
-        SIE_FILE *files = Sie_FS_CopyFileElement(CURRENT_FILE);
-        BOX_GUI = Sie_GUI_MsgBox(GetMsg(files, 0));
+        BOX_GUI = Sie_GUI_MsgBox(GetMsg(SELECTED_FILES, 0));
         GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);
-        SUBPROC(SUBPROC_Delete, files);
+        SUBPROC(SUBPROC_Delete, data);
+        SELECTED_FILES = NULL;
     }
 }
 
 void Delete() {
-    if (CURRENT_FILE && !(CURRENT_FILE->file_attr & SIE_FS_FA_VOLUME)) {
+    SIE_FILE *files = NULL;
+    if (SELECTED_FILES) {
+        files = SELECTED_FILES;
+    } else if (CURRENT_FILE && !(CURRENT_FILE->file_attr & SIE_FS_FA_VOLUME)) {
+        files = Sie_FS_CopyFileElement(CURRENT_FILE);
+    }
+    if (files) {
         SIE_GUI_BOX_CALLBACK callback;
         zeromem(&callback, sizeof(SIE_GUI_BOX_CALLBACK));
         callback.proc = BoxProc;
-        Sie_GUI_MsgBoxYesNo("Удалить?", &callback);
+        callback.data = files;
+        COUNT = Sie_FS_GetFilesCount(SELECTED_FILES);
+        Sie_GUI_MsgBoxYesNo("Удалить", &callback);
     }
 }

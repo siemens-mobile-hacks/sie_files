@@ -45,24 +45,6 @@ void CreateDir() {
     ShowMSG(1, (int)"Create directory");
 }
 
-void CopyFile() {
-    if (COPY_FILES) {
-        Sie_FS_DestroyFiles(COPY_FILES);
-    }
-    COPY_FILES = Sie_FS_CopyFileElement(CURRENT_FILE);
-    IPC_CloseChildrenGUI(0);
-}
-
-void MoveFile() {
-    if (MOVE_FILES) {
-        Sie_FS_DestroyFiles(MOVE_FILES);
-    }
-    MOVE_FILES = Sie_FS_CopyFileElement(CURRENT_FILE);
-    IPC_CloseChildrenGUI(0);
-}
-
-
-
 /**********************************************************************************************************************/
 
 void SetAsWallpaper() {

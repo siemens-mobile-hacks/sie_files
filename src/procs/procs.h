@@ -5,12 +5,11 @@
 #include "delete.h"
 #include "select.h"
 #include "settings.h"
+#include "copy_move.h"
 
 void CreateDiskInfoGUI();
 void CreateFile();
 void CreateDir();
-void CopyFile();
-void MoveFile();
 
 void SetAsWallpaper();
 

@@ -9,17 +9,14 @@ extern SIE_GUI_STACK *GUI_STACK;
 extern path_stack_t *PATH_STACK;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
-unsigned int WAIT = 0;
+unsigned int WAIT;
+unsigned int COUNT;
 SIE_GUI_BOX_GUI *BOX_GUI;
 char LAST_FILE_NAME[512];
 
 static char *GetMsg(unsigned int id) {
     static char msg[64];
-    static int count = 0;
-    if (!count) {
-        count = (COPY_FILES) ? Sie_FS_GetFilesCount(COPY_FILES) : Sie_FS_GetFilesCount(MOVE_FILES);
-    }
-    sprintf(msg, "%s: %d/%d", (COPY_FILES) ? "Копирование" : "Перемещение", id, count);
+    sprintf(msg, "%s: %d/%d", (COPY_FILES) ? "Копирование" : "Перемещение", id, COUNT);
     return msg;
 }
 
@@ -50,8 +47,9 @@ static void Update(SIE_FILE *file, unsigned int id) {
 static void SUBPROC_Paste(void) {
     unsigned int id = 0;
     SIE_FILE *files = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
-    SIE_FILE *file = files;
+    COUNT = Sie_FS_GetFilesCount(files);
 
+    SIE_FILE *file = files;
     while (1) {
         if (WAIT == 1) {
             NU_Sleep(50);

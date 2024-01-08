@@ -47,12 +47,12 @@ inline void AddPasteItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     }
 }
 
-#define AddCopyAndMoveItems() { \
-            item.proc = CopyFile; \
-            Sie_Menu_List_AddItem(data->menu, &item, "Копировать"); \
-            item.proc = MoveFile; \
-            Sie_Menu_List_AddItem(data->menu, &item, "Переместить");\
-        }
+inline void AddCopyAndMoveItems(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+    item->proc = CopyFiles;
+    Sie_Menu_List_AddItem(menu, item, "Копировать");
+    item->proc = MoveFiles;
+    Sie_Menu_List_AddItem(menu, item, "Переместить");
+}
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     const SIE_GUI_SURFACE_HANDLERS handlers = {
@@ -75,7 +75,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             Sie_Menu_List_AddItem(data->menu, &item, "Создать");
             AddSelectItem(data->menu, &item);
             if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // файл
-                AddCopyAndMoveItems();
+                AddCopyAndMoveItems(data->menu, &item);
                 int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
                 if (uid) {
                     if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
@@ -84,11 +84,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
                     }
                 }
             } else { // dir
-                AddCopyAndMoveItems();
+                AddCopyAndMoveItems(data->menu, &item);
             }
         } else {
             AddSelectItem(data->menu, &item);
-            AddCopyAndMoveItems();
+            AddCopyAndMoveItems(data->menu, &item);
         }
         if (SELECTED_FILES) {
             item.proc = UnSelectAll;
