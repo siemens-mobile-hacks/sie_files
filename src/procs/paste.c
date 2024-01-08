@@ -115,8 +115,13 @@ static void SUBPROC_Paste(void) {
     COPY_FILES = MOVE_FILES = NULL;
 }
 
+unsigned int IsPasteAllow() {
+    return ((COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name))) &&
+            strlen(PATH_STACK->dir_name));
+}
+
 void Paste(void) {
-    if (IsAllowPaste()) {
+    if (IsPasteAllow()) {
         LAST_FILE_NAME[0] = '\0';
         BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
         SUBPROC(SUBPROC_Paste);

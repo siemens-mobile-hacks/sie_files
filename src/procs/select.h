@@ -5,5 +5,6 @@ void Select();
 void UnSelect();
 void UnSelectAll();
 void ToggleSelect();
+unsigned int IsSelectedCurrentFile();
 
 #endif

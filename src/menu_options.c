@@ -41,7 +41,7 @@ void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
 }
 
 inline void AddPasteItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
-    if (IsAllowPaste()) {
+    if (IsPasteAllow()) {
         item->proc = Paste;
         Sie_Menu_List_AddItem(menu, item, "Вставить");
     }

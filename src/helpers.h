@@ -4,7 +4,5 @@
 #include <sie/sie.h>
 
 SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file);
-unsigned int IsSelectedCurrentFile();
-unsigned int IsAllowPaste();
 
 #endif

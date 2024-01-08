@@ -19,11 +19,3 @@ SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
     Sie_FS_DestroyFileElement(f);
     return unique;
 }
-
-inline unsigned int IsSelectedCurrentFile() {
-    return Sie_FS_ContainsFile(SELECTED_FILES, CURRENT_FILE);
-}
-
-inline unsigned int IsAllowPaste() {
-    return (COPY_FILES || (MOVE_FILES && strcmpi(MOVE_FILES->dir_name, PATH_STACK->dir_name)));
-}

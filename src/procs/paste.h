@@ -2,5 +2,6 @@
 #define __PROCS_PASTE_H__
 
 void Paste();
+unsigned IsPasteAllow();
 
 #endif

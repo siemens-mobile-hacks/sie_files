@@ -56,6 +56,10 @@ void UnSelectAll() {
     IPC_CloseChildrenGUI(1);
 }
 
+unsigned int IsSelectedCurrentFile() {
+    return Sie_FS_ContainsFile(SELECTED_FILES, CURRENT_FILE);
+}
+
 void ToggleSelect() {
     if (IsSelectedCurrentFile()) {
         UnSelect();
