@@ -31,14 +31,13 @@ void CreateFile(SIE_MENU_LIST_ITEM *menu_item, unsigned int row) {
     Sie_FS_CopyFile(src, dest);
     mfree(src);
     mfree(dest);
+    IPC_CloseChildrenGUI(0);
 
     WSHDR *ws = AllocWS(len);
     str_2ws(ws, dest_file->file_name, len);
-    IPC_SetRowByFileName_ws(ws);
     Sie_FS_DestroyFileElement(src_file);
     Sie_FS_DestroyFileElement(dest_file);
-
-    IPC_CloseChildrenGUI(0);
+    IPC_SetRowByFileName_ws(ws);
 }
 
 void CreateDir() {

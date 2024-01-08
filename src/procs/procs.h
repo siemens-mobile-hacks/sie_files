@@ -8,7 +8,7 @@
 #include "copy_move.h"
 
 void CreateDiskInfoGUI();
-void CreateFile();
+void CreateFile(void *menu_item, unsigned int row);
 void CreateDir();
 
 void SetAsWallpaper();

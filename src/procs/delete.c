@@ -66,7 +66,7 @@ void Delete() {
         zeromem(&callback, sizeof(SIE_GUI_BOX_CALLBACK));
         callback.proc = BoxProc;
         callback.data = files;
-        COUNT = Sie_FS_GetFilesCount(SELECTED_FILES);
+        COUNT = Sie_FS_GetFilesCount(files);
         Sie_GUI_MsgBoxYesNo("Удалить", &callback);
     }
 }

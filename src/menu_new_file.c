@@ -30,19 +30,20 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     wsprintf(data->surface->hdr_ws, "%t", "Новый файл");
 
     char mask[64];
-    SIE_MENU_LIST_ITEM item;
-    zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->gui_id);
     sprintf(mask, "%s*", DIR_TEMPLATES);
     SIE_FILE *templates = Sie_FS_FindFiles(mask);
     if (templates) {
-        item.proc = CreateFile;
         SIE_FILE *p = templates;
         while (p) {
+            SIE_MENU_LIST_ITEM item;
+            zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+            item.proc = CreateFile;
             Sie_Menu_List_AddItem(data->menu, &item, p->file_name);
             p = p->next;
         }
     }
+    Sie_FS_DestroyFiles(templates);
     data->gui.state = 1;
 }
 
