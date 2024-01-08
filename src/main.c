@@ -76,14 +76,7 @@ SIE_FILE *InitRootFiles() {
         }
         prev = current;
     }
-    SIE_FILE *p = current;
-    while (true) {
-        if (!(p->prev)) {
-            break;
-        }
-        p = p->prev;
-    }
-    return p;
+    return Sie_FS_GetFirstFile(current);
 }
 
 SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
