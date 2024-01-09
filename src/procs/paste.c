@@ -23,7 +23,7 @@ static char *GetMsg(unsigned int id) {
 static void BoxProc(int flag, void *data) {
     SIE_FILE *file = (SIE_FILE*)data;
     char *src = Sie_FS_GetPathByFile(file);
-    if (flag == SIE_GUI_BOX_CALLBACK_NO) {
+    if (flag == SIE_GUI_BOX_CALLBACK_YES) {
         SIE_FILE *new_file = GetUniqueFileInCurrentDir(file);
         char *dest = Sie_FS_GetPathByFile(new_file);
         if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
@@ -79,7 +79,7 @@ static void SUBPROC_Paste(void) {
                 callback.proc = BoxProc;
                 callback.data = file;
                 SIE_GUI_BOX_GUI *box_gui = Sie_GUI_Box("Файл существует",
-                                                       "Заменить", "Вставить", &callback);
+                                                       "Вставить", "Заменить", &callback);
                 GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(box_gui->gui), box_gui->gui_id);
                 WAIT = 1;
                 continue;
