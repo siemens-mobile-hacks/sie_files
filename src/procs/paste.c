@@ -20,22 +20,48 @@ static char *GetMsg(unsigned int id) {
     return msg;
 }
 
+static void CopyOrMoveFile(const char *src, const char *dest) {
+    unsigned int err;
+    if (COPY_FILES) {
+        Sie_FS_CopyFile(src, dest);
+    } else {
+        Sie_FS_MoveFile(src, dest, &err);
+    }
+}
+
 static void BoxProc(int flag, void *data) {
+    unsigned int err;
     SIE_FILE *file = (SIE_FILE*)data;
+    SIE_FILE *new_file = NULL;
     char *src = Sie_FS_GetPathByFile(file);
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
-        SIE_FILE *new_file = GetUniqueFileInCurrentDir(file);
+        new_file = GetUniqueFileInCurrentDir(file);
         char *dest = Sie_FS_GetPathByFile(new_file);
         if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
             ShowMSG(1, (int) "Is directory");
         } else {
-            Sie_FS_CopyFile(src, dest);
+            CopyOrMoveFile(src, dest);
         }
         mfree(dest);
-        strcpy(LAST_FILE_NAME, new_file->file_name);
-        Sie_FS_DestroyFileElement(new_file);
+    } else {
+        new_file = Sie_FS_CopyFileElement(file);
+        mfree(new_file->dir_name);
+        new_file->dir_name = malloc(strlen(PATH_STACK->dir_name) + 1);
+        strcpy(new_file->dir_name, PATH_STACK->dir_name);
+
+        char *dest = Sie_FS_GetPathByFile(new_file);
+        if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
+            Sie_FS_DeleteFilesRecursive(dest);
+            CopyOrMoveFile(src, dest);
+        } else {
+            Sie_FS_DeleteFile(dest, &err);
+            CopyOrMoveFile(src, dest);
+        }
+        mfree(dest);
     }
     mfree(src);
+    strcpy(LAST_FILE_NAME, new_file->file_name);
+    Sie_FS_DestroyFileElement(new_file);
     WAIT = 2;
 }
 
@@ -85,12 +111,7 @@ static void SUBPROC_Paste(void) {
                 continue;
             } else {
                 char *src = Sie_FS_GetPathByFile(file);
-                if (COPY_FILES) {
-                    Sie_FS_CopyFile(src, dest);
-                } else {
-                    unsigned int err;
-                    fmove(src, dest, &err);
-                }
+                CopyOrMoveFile(src, dest);
                 mfree(src);
                 strcpy(LAST_FILE_NAME, file->file_name);
             }

@@ -28,9 +28,9 @@ static void DeleteFiles(SIE_FILE *files) {
     while (file) {
         char *path = Sie_FS_GetPathByFile(file);
         if (file->file_attr & SIE_FS_FA_DIRECTORY) {
-            Sie_FS_RemoveDirRecursive(path);
+            Sie_FS_DeleteFilesRecursive(path);
         } else {
-            _unlink(path, &err);
+            Sie_FS_DeleteFile(path, &err);
         }
         mfree(path);
         Update(files, file, i++);
