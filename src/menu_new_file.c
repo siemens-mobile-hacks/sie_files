@@ -38,7 +38,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         while (p) {
             SIE_MENU_LIST_ITEM item;
             zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
-            item.proc = CreateFile;
+            item.proc = CreateNewFile;
             Sie_Menu_List_AddItem(data->menu, &item, p->file_name);
             p = p->next;
         }
