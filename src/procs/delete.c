@@ -1,8 +1,8 @@
 #include <sie/sie.h>
 #include "procs.h"
 #include "../ipc.h"
+#include "../helpers.h"
 
-extern SIE_MENU_LIST *MENU;
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
 extern SIE_GUI_STACK *GUI_STACK;
@@ -28,7 +28,7 @@ static void DeleteFiles(SIE_FILE *files) {
     while (file) {
         char *path = Sie_FS_GetPathByFile(file);
         if (file->file_attr & SIE_FS_FA_DIRECTORY) {
-            Sie_FS_DeleteFilesRecursive(path);
+            Sie_FS_DeleteDirRecursive(path, &err);
         } else {
             Sie_FS_DeleteFile(path, &err);
         }
@@ -38,18 +38,19 @@ static void DeleteFiles(SIE_FILE *files) {
     }
 }
 
-static void SUBPROC_Delete(SIE_FILE *files) {
+static void SubProc_Delete(SIE_FILE *files) {   
     DeleteFiles(files);
     Sie_FS_DestroyFiles(files);
-    IPC_CloseChildrenGUI(1);
+    Sie_GUI_CloseGUI_GBS(BOX_GUI->surface->gui_id);
+    IPC_Reload();
     BOX_GUI = NULL;
 }
 
 static void BoxProc(int flag, void *data) {
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
         BOX_GUI = Sie_GUI_MsgBox(GetMsg(SELECTED_FILES, 0));
-        GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);
-        SUBPROC(SUBPROC_Delete, data);
+        Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->surface->gui_id);
+        Sie_SubProc_Run(SubProc_Delete, data);
         SELECTED_FILES = NULL;
     }
 }
@@ -67,6 +68,7 @@ void Delete() {
         callback.proc = BoxProc;
         callback.data = files;
         COUNT = Sie_FS_GetFilesCount(files);
+        CloseChildrenGUI();
         Sie_GUI_MsgBoxYesNo("Удалить", &callback);
     }
 }

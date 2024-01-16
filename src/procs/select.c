@@ -18,7 +18,7 @@ void Select() {
             last->next = file;
             file->prev = last;
         }
-        IPC_CloseChildrenGUI(0);
+        CloseChildrenGUI();
         DirectRedrawGUI();
     }
 }
@@ -40,11 +40,11 @@ void UnSelect() {
                     SELECTED_FILES = NULL;
                 }
             }
+            CloseChildrenGUI();
             if (SELECTED_FILES) {
-                IPC_CloseChildrenGUI(0);
                 DirectRedrawGUI();
             } else {
-                IPC_CloseChildrenGUI(1);
+                IPC_Reload();
             }
         }
     }
@@ -53,7 +53,8 @@ void UnSelect() {
 void UnSelectAll() {
     Sie_FS_DestroyFiles(SELECTED_FILES);
     SELECTED_FILES = NULL;
-    IPC_CloseChildrenGUI(1);
+    CloseChildrenGUI();
+    IPC_Reload();
 }
 
 unsigned int IsSelectedCurrentFile() {

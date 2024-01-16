@@ -1,6 +1,7 @@
 #include <swilib.h>
 #include <sie/sie.h>
 #include "../ipc.h"
+#include "../helpers.h"
 
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
@@ -21,9 +22,10 @@ static void CopyOrMoveFiles(unsigned int type) {
         } else {
             MOVE_FILES = files;
         }
-        IPC_CloseChildrenGUI(1);
+        CloseChildrenGUI();
+        IPC_Reload();
     } else {
-        IPC_CloseChildrenGUI(0);
+        CloseChildrenGUI();
     }
 }
 

@@ -5,9 +5,8 @@
 #include "path_stack.h"
 
 extern path_stack_t *PATH_STACK;
-extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *SELECTED_FILES;
-extern SIE_FILE *COPY_FILES, *MOVE_FILES;
+extern SIE_GUI_STACK *GUI_STACK;
+extern unsigned int MAIN_GUI_ID;
 
 SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
     SIE_FILE *f = Sie_FS_CopyFileElement(file);
@@ -18,4 +17,8 @@ SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
     SIE_FILE *unique = Sie_FS_GetUniqueFile(f);
     Sie_FS_DestroyFileElement(f);
     return unique;
+}
+
+void CloseChildrenGUI() {
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
 }

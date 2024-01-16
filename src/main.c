@@ -10,7 +10,6 @@
 
 typedef struct {
     GUI gui;
-    unsigned int gui_id;
     SIE_FILE *files;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
@@ -37,11 +36,9 @@ SIE_FILE *SELECTED_FILES;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
 path_stack_t *PATH_STACK;
 SIE_GUI_STACK *GUI_STACK;
+unsigned int MAIN_GUI_ID;
 
 unsigned int SHOW_HIDDEN_FILES = 1;
-
-const char *DIR_ROOT = "0:\\zbin\\usr\\sie_files\\";
-const char *DIR_IMG = "0:\\zbin\\usr\\sie_files\\img\\";
 
 /**********************************************************************************************************************/
 
@@ -175,7 +172,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     data->files = NULL;
     SELECTED_FILES = NULL;
     Sie_Menu_List_Destroy(MENU);
-    MENU = Sie_Menu_List_Init(data->gui_id);
+    MENU = Sie_Menu_List_Init(data->surface->gui_id);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -217,19 +214,10 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    Sie_FT_Init();
-    Sie_Resources_Init();
     PATH_STACK = InitPathStack();
-
-    const SIE_GUI_SURFACE_HANDLERS handlers = {
-            NULL,
-            (int(*)(void *, GUI_MSG *msg))_OnKey,
-    };
-    data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
     data->files = InitRootFiles();
     ChangeDir(data, "");
     UpdateHeader(data);
-
     data->gui.state = 1;
 }
 
@@ -242,8 +230,6 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     Sie_FS_DestroyFiles(SELECTED_FILES);
     Sie_Menu_List_Destroy(MENU);
     DestroyPathStack(PATH_STACK);
-    Sie_FT_Destroy();
-    Sie_Resources_Destroy();
 }
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
@@ -365,7 +351,7 @@ void CreateDefaultFiles() {
     ws_2str(ws, path, 255);
     FreeWS(ws);
     if (!Sie_FS_FileExists(path)) {
-        Sie_FS_CreateFile(path);
+        Sie_FS_CreateFile(path, &err);
     }
 }
 
@@ -374,6 +360,10 @@ static void maincsm_oncreate(CSM_RAM *data) {
     sprintf(DIR_TEMPLATES, "%d:\\%s", DEFAULT_DISK, "Templates\\");
     SUBPROC((void*)CreateDefaultFiles);
 
+    const SIE_GUI_SURFACE_HANDLERS handlers = {
+            NULL,
+            (int(*)(void *, GUI_MSG *msg))_OnKey,
+    };
     MAIN_CSM *csm = (MAIN_CSM*)data;
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
@@ -383,9 +373,11 @@ static void maincsm_oncreate(CSM_RAM *data) {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     csm->csm.state = 0;
     csm->csm.unk1 = 0;
-    main_gui->gui_id = CreateGUI(main_gui);
     csm->main_gui = main_gui;
-    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), csm->main_gui->gui_id);
+    MAIN_GUI_ID = CreateGUI(main_gui);
+    main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
+                                             MAIN_GUI_ID);
+    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), MAIN_GUI_ID);
 }
 
 void KillElf() {
@@ -405,7 +397,7 @@ void Reload(MAIN_GUI *data) {
 
 static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
     MAIN_CSM *csm = (MAIN_CSM*)data;
-    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->main_gui->gui_id)) {
+    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->main_gui->surface->gui_id)) {
         csm->csm.state = -3;
     }
     else if (msg->msg == MSG_IPC) {
@@ -413,11 +405,6 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
             if (msg->submess == IPC_RELOAD) {
                 Reload(csm->main_gui);
-            } else if (msg->submess == IPC_CLOSE_CHILDREN_GUI) {
-                GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, csm->main_gui->gui_id);
-                if ((unsigned int)ipc->data == 1) {
-                    Reload(csm->main_gui);
-                }
             } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
                 unsigned int row = 0, err = 0;
                 ChangeDir(csm->main_gui, ".");
@@ -425,7 +412,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                 if (!err) {
                     PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
-                    DirectRedrawGUI();
+                    DirectRedrawGUI_ID(csm->main_gui->surface->gui_id);
                 }
                 SetCurrentFile(csm->main_gui->files, row);
                 FreeWS(ipc->data);

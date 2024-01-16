@@ -5,11 +5,17 @@
 #include "../helpers.h"
 #include "../path_stack.h"
 
-extern SIE_GUI_STACK *GUI_STACK;
+typedef struct {
+    int flag;
+    void *data;
+} SUBPROC_DATA;
+
 extern path_stack_t *PATH_STACK;
+extern SIE_GUI_STACK *GUI_STACK;
+extern unsigned int MAIN_GUI_ID;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
-unsigned int WAIT;
+volatile unsigned int WAIT;
 unsigned int COUNT;
 SIE_GUI_BOX_GUI *BOX_GUI;
 char LAST_FILE_NAME[512];
@@ -21,27 +27,28 @@ static char *GetMsg(unsigned int id) {
 }
 
 static void CopyOrMoveFile(const char *src, const char *dest) {
-    unsigned int err;
+    unsigned int err = 0;
     if (COPY_FILES) {
-        Sie_FS_CopyFile(src, dest);
+        if (Sie_FS_IsDir(src, &err)) {
+            Sie_FS_CopyDir(src, dest, &err);
+        } else {
+            Sie_FS_CopyFile(src, dest, &err);
+        }
     } else {
         Sie_FS_MoveFile(src, dest, &err);
     }
 }
 
-static void BoxProc(int flag, void *data) {
+static void SubProc_Box(SUBPROC_DATA *data) {
     unsigned int err;
-    SIE_FILE *file = (SIE_FILE*)data;
+    unsigned int flag = data->flag;
+    SIE_FILE *file = (SIE_FILE*)data->data;
     SIE_FILE *new_file = NULL;
     char *src = Sie_FS_GetPathByFile(file);
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
         new_file = GetUniqueFileInCurrentDir(file);
         char *dest = Sie_FS_GetPathByFile(new_file);
-        if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
-            ShowMSG(1, (int) "Is directory");
-        } else {
-            CopyOrMoveFile(src, dest);
-        }
+        CopyOrMoveFile(src, dest);
         mfree(dest);
     } else {
         new_file = Sie_FS_CopyFileElement(file);
@@ -51,7 +58,7 @@ static void BoxProc(int flag, void *data) {
 
         char *dest = Sie_FS_GetPathByFile(new_file);
         if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
-            Sie_FS_DeleteFilesRecursive(dest);
+            Sie_FS_DeleteDirRecursive(dest, &err);
             CopyOrMoveFile(src, dest);
         } else {
             Sie_FS_DeleteFile(dest, &err);
@@ -65,15 +72,21 @@ static void BoxProc(int flag, void *data) {
     WAIT = 2;
 }
 
+static void BoxProc(int flag, void *data) {
+    static SUBPROC_DATA subproc_data;
+    subproc_data.flag = flag;
+    subproc_data.data = data;
+    Sie_SubProc_Run(SubProc_Box, &subproc_data);
+}
+
 static void Update(SIE_FILE *file, unsigned int id) {
     wsprintf(BOX_GUI->msg_ws, "%t", GetMsg(id + 1));
     PendedRedrawGUI();
 }
 
-static void SUBPROC_Paste(void) {
+static void SubProc_Paste() {
     unsigned int id = 0;
     SIE_FILE *files = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
-    COUNT = Sie_FS_GetFilesCount(files);
 
     SIE_FILE *file = files;
     while (1) {
@@ -87,11 +100,16 @@ static void SUBPROC_Paste(void) {
 
         const char *dir_name = PATH_STACK->dir_name;
         if (strcmp(file->dir_name, dir_name) == 0) { // current dir
+            unsigned int err = 0;
             SIE_FILE *new_file = GetUniqueFileInCurrentDir(file);
             char *dest = Sie_FS_GetPathByFile(new_file);
             if (COPY_FILES) {
                 char *src = Sie_FS_GetPathByFile(file);
-                Sie_FS_CopyFile(src, dest);
+                if (Sie_FS_IsDir(src, &err)) {
+                    Sie_FS_CopyDir(src, dest, &err);
+                } else {
+                    Sie_FS_CopyFile(src, dest, &err);
+                }
                 mfree(src);
             }
             mfree(dest);
@@ -104,9 +122,7 @@ static void SUBPROC_Paste(void) {
                 SIE_GUI_BOX_CALLBACK callback;
                 callback.proc = BoxProc;
                 callback.data = file;
-                SIE_GUI_BOX_GUI *box_gui = Sie_GUI_Box("Файл существует",
-                                                       "Вставить", "Заменить", &callback);
-                GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(box_gui->gui), box_gui->gui_id);
+                Sie_GUI_Box("Файл существует","Вставить", "Заменить", &callback);
                 WAIT = 1;
                 continue;
             } else {
@@ -124,16 +140,19 @@ static void SUBPROC_Paste(void) {
         } else break;
     }
 
+    Sie_GUI_CloseGUI_GBS(BOX_GUI->surface->gui_id);
+
     size_t len = strlen(LAST_FILE_NAME);
     if (len) {
         WSHDR *ws = AllocWS(len);
         str_2ws(ws, LAST_FILE_NAME, len);
-        IPC_CloseChildrenGUI(1);
+        IPC_Reload();
         IPC_SetRowByFileName_ws(ws);
     }
-    BOX_GUI = NULL;
     Sie_FS_DestroyFiles(files);
     COPY_FILES = MOVE_FILES = NULL;
+
+    BOX_GUI = NULL;
 }
 
 unsigned int IsPasteAllow() {
@@ -141,11 +160,21 @@ unsigned int IsPasteAllow() {
             strlen(PATH_STACK->dir_name));
 }
 
+static void Proc() {
+    LAST_FILE_NAME[0] = '\0';
+    COUNT = Sie_FS_GetFilesCount((COPY_FILES) ? COPY_FILES : MOVE_FILES);
+    BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
+    Sie_SubProc_Run(SubProc_Paste, NULL);
+}
+
 void Paste(void) {
     if (IsPasteAllow()) {
-        LAST_FILE_NAME[0] = '\0';
-        BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
-        SUBPROC(SUBPROC_Paste);
-        GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->gui_id);
+        static GBSTMR tmr;
+        static SIE_GUI_FOCUS_DATA data;
+        CloseChildrenGUI();
+        data.gui_id = MAIN_GUI_ID;
+        data.proc = Proc;
+        data.data = NULL;
+        Sie_GUI_FocusGUI(&tmr, &data);
     }
 }

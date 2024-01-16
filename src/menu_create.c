@@ -6,7 +6,6 @@
 
 typedef struct {
     GUI gui;
-    unsigned int gui_id;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
@@ -27,17 +26,10 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    const SIE_GUI_SURFACE_HANDLERS handlers = {
-            NULL,
-            (int(*)(void *, GUI_MSG *msg))_OnKey,
-    };
-    data->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers);
-    wsprintf(data->surface->hdr_ws, "%t", "Создать");
-
     char mask[64];
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
-    data->menu = Sie_Menu_List_Init(data->gui_id);
+    data->menu = Sie_Menu_List_Init(data->surface->gui_id);
     sprintf(mask, "%s*", DIR_TEMPLATES);
     SIE_FILE *templates = Sie_FS_FindFiles(mask);
     if (templates) {
@@ -55,7 +47,7 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
     Sie_Menu_List_Destroy(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
-    GUI_STACK = Sie_GUI_Stack_Pop(GUI_STACK, data->gui_id);
+    GUI_STACK = Sie_GUI_Stack_Delete(GUI_STACK, data->surface->gui_id);
 }
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
@@ -105,13 +97,19 @@ static const void *const gui_methods[11] = {
 };
 
 void CreateMenuCreate() {
+    const SIE_GUI_SURFACE_HANDLERS handlers = {
+            NULL,
+            (int(*)(void *, GUI_MSG *msg))_OnKey,
+    };
     LockSched();
     MAIN_GUI *main_gui = malloc(sizeof(MAIN_GUI));
     zeromem(main_gui, sizeof(MAIN_GUI));
     main_gui->gui.canvas = (RECT*)(&canvas);
     main_gui->gui.methods = (void*)gui_methods;
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
-    main_gui->gui_id = CreateGUI(main_gui);
-    GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->gui_id);
+    main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
+                                             CreateGUI(main_gui));
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Создать");
+    GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }
