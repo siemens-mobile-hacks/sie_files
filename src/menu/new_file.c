@@ -1,7 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "procs/procs.h"
+#include "../procs/procs.h"
 
 typedef struct {
     GUI gui;
@@ -11,13 +11,9 @@ typedef struct {
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
-/**********************************************************************************************************************/
-
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
-extern unsigned int SHOW_HIDDEN_FILES;
-
-/**********************************************************************************************************************/
+extern char *DIR_TEMPLATES;
 
 static void OnRedraw(MAIN_GUI *data) {
     Sie_GUI_Surface_Draw(data->surface);
@@ -25,13 +21,21 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    SIE_MENU_LIST_ITEM item;
-    zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+    char mask[64];
     data->menu = Sie_Menu_List_Init(data->surface->gui_id);
-    item.type = SIE_MENU_LIST_ITEM_TYPE_CHECKBOX;
-    item.flag = SHOW_HIDDEN_FILES;
-    item.proc = ToggleHiddenFiles;
-    Sie_Menu_List_AddItem(data->menu, &item, "Отображать скрытые файлы");
+    sprintf(mask, "%s*", DIR_TEMPLATES);
+    SIE_FILE *templates = Sie_FS_FindFiles(mask);
+    if (templates) {
+        SIE_FILE *p = templates;
+        while (p) {
+            SIE_MENU_LIST_ITEM item;
+            zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
+            item.proc = CreateNewFile;
+            Sie_Menu_List_AddItem(data->menu, &item, p->file_name);
+            p = p->next;
+        }
+    }
+    Sie_FS_DestroyFiles(templates);
     data->gui.state = 1;
 }
 
@@ -88,7 +92,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuSettings() {
+void CreateMenuNewFile() {
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
@@ -101,7 +105,7 @@ void CreateMenuSettings() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Настройки");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Новый файл");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }

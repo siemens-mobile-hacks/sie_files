@@ -3,8 +3,8 @@
 #include <sie/sie.h>
 #include "ipc.h"
 #include "path_stack.h"
-#include "menu_options.h"
 #include "procs/procs.h"
+#include "menu/options.h"
 
 #define MAIN_CSM_NAME "Файлы"
 

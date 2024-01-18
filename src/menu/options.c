@@ -1,11 +1,11 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "path_stack.h"
-#include "menu_create.h"
-#include "menu_set_as.h"
-#include "menu_settings.h"
-#include "procs/procs.h"
+#include "create.h"
+#include "set_as.h"
+#include "settings.h"
+#include "../path_stack.h"
+#include "../procs/procs.h"
 
 typedef struct {
     GUI gui;

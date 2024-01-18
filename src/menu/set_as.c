@@ -1,7 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "procs/procs.h"
+#include "../procs/procs.h"
 
 typedef struct {
     GUI gui;

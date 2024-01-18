@@ -1,8 +1,8 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "menu_new_file.h"
-#include "procs/procs.h"
+#include "new_file.h"
+#include "../procs/procs.h"
 
 typedef struct {
     GUI gui;
