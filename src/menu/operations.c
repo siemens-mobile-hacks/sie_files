@@ -1,16 +1,10 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
-#include "create.h"
-#include "set_as.h"
-#include "settings.h"
-#include "operations.h"
-#include "../path_stack.h"
 #include "../procs/procs.h"
 
 typedef struct {
     GUI gui;
-    unsigned int gui_id;
     SIE_MENU_LIST *menu;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
@@ -21,9 +15,6 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_FILE *CURRENT_FILE;
-extern SIE_FILE *SELECTED_FILES;
-extern SIE_FILE *COPY_FILES, *MOVE_FILES;
-extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
 
 /**********************************************************************************************************************/
@@ -33,59 +24,22 @@ static void OnRedraw(MAIN_GUI *data) {
     Sie_Menu_List_Draw(data->menu);
 }
 
-void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
-    if (!IsSelectedCurrentFile()) {
-        item->proc = Select;
-        Sie_Menu_List_AddItem(menu, item, "Выделить");
-    }
-}
-
-inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
-    item->proc = CreateMenuOperations;
-    Sie_Menu_List_AddItem(menu, item, "Операции");
-}
-
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
-    data->menu = Sie_Menu_List_Init(data->gui_id);
-    if (!strlen(PATH_STACK->dir_name)) { // disks
-        item.proc = CreateDiskInfoGUI;
-        Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
-    } else if (CURRENT_FILE) { // dir or file
-        if (!SELECTED_FILES) {
-            item.proc = CreateMenuCreate;
-            Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-            AddSelectItem(data->menu, &item);
-            if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // file
-                AddMenuOperations(data->menu, &item);
-                int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
-                if (uid) {
-                    if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
-                        item.proc = CreateMenuSetAs;
-                        Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
-                    }
-                }
-            } else { // dir
-                AddMenuOperations(data->menu, &item);
-            }
-        } else {
-            AddSelectItem(data->menu, &item);
-            AddMenuOperations(data->menu, &item);
-        }
-        if (SELECTED_FILES) {
-            item.proc = UnSelectAll;
-            Sie_Menu_List_AddItem(data->menu, &item, "Отменить все выделения");
-        }
-    } else { // empty :-)
-        item.proc = CreateMenuCreate;
-        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
-        if (IsPasteAllow()) {
-            AddMenuOperations(data->menu, &item);
-        }
+    data->menu = Sie_Menu_List_Init(data->surface->gui_id);
+    if (IsPasteAllow()) {
+        item.proc = Paste;
+        Sie_Menu_List_AddItem(data->menu, &item, "Вставить");
     }
-    item.proc = CreateMenuSettings;
-    Sie_Menu_List_AddItem(data->menu, &item, "Настройки");
+    if (CURRENT_FILE) {
+        item.proc = CopyFiles;
+        Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
+        item.proc = MoveFiles;
+        Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+        item.proc = Delete;
+        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
+    }
     data->gui.state = 1;
 }
 
@@ -93,7 +47,7 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
     Sie_Menu_List_Destroy(data->menu);
     Sie_GUI_Surface_Destroy(data->surface);
-    GUI_STACK = Sie_GUI_Stack_Delete(GUI_STACK, data->gui_id);
+    GUI_STACK = Sie_GUI_Stack_Delete(GUI_STACK, data->surface->gui_id);
 }
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
@@ -142,7 +96,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuOptions() {
+void CreateMenuOperations() {
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
@@ -155,7 +109,7 @@ void CreateMenuOptions() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Опции");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Операции");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }
