@@ -10,7 +10,6 @@
 
 typedef struct {
     GUI gui;
-    SIE_FILE *files;
     SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
 
@@ -31,6 +30,7 @@ unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
 SIE_MENU_LIST *MENU;
+SIE_FILE *FILES;
 SIE_FILE *CURRENT_FILE;
 SIE_FILE *SELECTED_FILES;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
@@ -167,9 +167,9 @@ void SetCurrentFile(SIE_FILE *files, unsigned int id) {
 }
 
 void ChangeDir(MAIN_GUI *data, const char *path) {
-    Sie_FS_DestroyFiles(data->files);
+    Sie_FS_DestroyFiles(FILES);
     Sie_FS_DestroyFiles(SELECTED_FILES);
-    data->files = NULL;
+    FILES = NULL;
     SELECTED_FILES = NULL;
     Sie_Menu_List_Destroy(MENU);
     MENU = Sie_Menu_List_Init(data->surface->gui_id);
@@ -186,23 +186,23 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     }
 
     if (!strlen(p->dir_name)) { // root
-        data->files = InitRootFiles();
-        MENU->items = InitItems(data->files, &(MENU->n_items));
+        FILES = InitRootFiles();
+        MENU->items = InitItems(FILES, &(MENU->n_items));
         p->row = Sie_Menu_List_SetRow(MENU, p->row);
     } else {
         char *mask = NULL;
         mask = malloc(strlen(p->dir_name) + 1 + 1);
         sprintf(mask, "%s*", p->dir_name);
-        data->files = Sie_FS_FindFiles(mask);
-        data->files = Sie_FS_SortFilesByName(data->files, 1);
-        if (data->files) {
-            MENU->items = InitItems(data->files, &(MENU->n_items));
+        FILES = Sie_FS_FindFiles(mask);
+        FILES = Sie_FS_SortFilesByName(FILES, 1);
+        if (FILES) {
+            MENU->items = InitItems(FILES, &(MENU->n_items));
             p->row = Sie_Menu_List_SetRow(MENU, p->row);
         }
         mfree(mask);
     }
     Sie_Menu_List_Refresh(MENU);
-    SetCurrentFile(data->files, MENU->row);
+    SetCurrentFile(FILES, MENU->row);
     UpdateHeader(data);
 }
 
@@ -215,7 +215,7 @@ static void OnRedraw(MAIN_GUI *data) {
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     PATH_STACK = InitPathStack();
-    data->files = InitRootFiles();
+//    data->files = InitRootFiles();
     ChangeDir(data, "");
     UpdateHeader(data);
     data->gui.state = 1;
@@ -223,11 +223,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
 
 static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     data->gui.state = 0;
-    Sie_FS_DestroyFiles(data->files);
+    Sie_FS_DestroyFiles(FILES);
+    Sie_FS_DestroyFiles(SELECTED_FILES);
     if (CURRENT_FILE) {
         Sie_FS_DestroyFileElement(CURRENT_FILE);
     }
-    Sie_FS_DestroyFiles(SELECTED_FILES);
     Sie_Menu_List_Destroy(MENU);
     DestroyPathStack(PATH_STACK);
 }
@@ -253,7 +253,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
                 PATH_STACK->row = MENU->row;
-                SetCurrentFile(data->files, MENU->row);
+                SetCurrentFile(FILES, MENU->row);
                 UpdateHeader(data);
                 Sie_GUI_Surface_Draw(data->surface);
                 break;
@@ -263,9 +263,9 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                         SIE_FILE *file;
                         WSHDR *ws = MENU->items[MENU->row].ws;
                         ws_2str(ws, path, wstrlen(ws));
-                        file = Sie_FS_GetFileByFileName(data->files, path);
+                        file = Sie_FS_GetFileByFileName(FILES, path);
                         if (!file) {
-                            file = Sie_FS_GetFileByAlias(data->files, path);
+                            file = Sie_FS_GetFileByAlias(FILES, path);
                         }
                         if (file) {
                             if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
@@ -414,7 +414,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                     Sie_Menu_List_Refresh(MENU);
                     DirectRedrawGUI_ID(csm->main_gui->surface->gui_id);
                 }
-                SetCurrentFile(csm->main_gui->files, row);
+                SetCurrentFile(FILES, row);
                 FreeWS(ipc->data);
             }
         }
