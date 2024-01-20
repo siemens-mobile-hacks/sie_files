@@ -84,7 +84,7 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
     SIE_FILE *file = top;
     unsigned int i = 0;
     while (file) {
-        if (!SHOW_HIDDEN_FILES && file->file_attr & SIE_FS_FA_HIDDEN) { // pass hidden files
+        if (!SHOW_HIDDEN_FILES && (file->file_attr & SIE_FS_FA_HIDDEN)) { // pass hidden files
             file = file->next;
             continue;
         }
@@ -187,19 +187,20 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 
     if (!strlen(p->dir_name)) { // root
         FILES = InitRootFiles();
-        MENU->items = InitItems(FILES, &(MENU->n_items));
-        p->row = Sie_Menu_List_SetRow(MENU, p->row);
     } else {
         char *mask = NULL;
         mask = malloc(strlen(p->dir_name) + 1 + 1);
         sprintf(mask, "%s*", p->dir_name);
         FILES = Sie_FS_FindFiles(mask);
         FILES = Sie_FS_SortFilesByName(FILES, 1);
-        if (FILES) {
-            MENU->items = InitItems(FILES, &(MENU->n_items));
-            p->row = Sie_Menu_List_SetRow(MENU, p->row);
-        }
         mfree(mask);
+    }
+    if (!SHOW_HIDDEN_FILES) {
+        FILES = Sie_FS_ExcludeFilesByFileAttr(FILES, SIE_FS_FA_HIDDEN);
+    }
+    if (FILES) {
+        MENU->items = InitItems(FILES, &(MENU->n_items));
+        p->row = Sie_Menu_List_SetRow(MENU, p->row);
     }
     Sie_Menu_List_Refresh(MENU);
     SetCurrentFile(FILES, MENU->row);
@@ -215,7 +216,6 @@ static void OnRedraw(MAIN_GUI *data) {
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     PATH_STACK = InitPathStack();
-//    data->files = InitRootFiles();
     ChangeDir(data, "");
     UpdateHeader(data);
     data->gui.state = 1;
@@ -244,11 +244,10 @@ static void OnUnFocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
 }
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
-    char path[1024];
-
     Sie_Menu_List_OnKey(MENU, msg);
-
     if (msg->gbsmsg->msg == KEY_DOWN || msg->gbsmsg->msg == LONG_PRESS) {
+        WSHDR *ws;
+        char path[256];
         switch (msg->gbsmsg->submess) {
             case SIE_MENU_LIST_KEY_PREV:
             case SIE_MENU_LIST_KEY_NEXT:
@@ -261,21 +260,19 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                 if (MENU->n_items) {
                     if (!SELECTED_FILES) {
                         SIE_FILE *file;
-                        WSHDR *ws = MENU->items[MENU->row].ws;
+                        ws = MENU->items[MENU->row].ws;
                         ws_2str(ws, path, wstrlen(ws));
                         file = Sie_FS_GetFileByFileName(FILES, path);
                         if (!file) {
                             file = Sie_FS_GetFileByAlias(FILES, path);
                         }
                         if (file) {
-                            if (file->file_attr & SIE_FS_FA_VOLUME || file->file_attr & SIE_FS_FA_DIRECTORY) {
+                            if (file->file_attr & (SIE_FS_FA_VOLUME | SIE_FS_FA_DIRECTORY)) {
                                 sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
-                                //data->path_list_last->row = data->menu->row;
                                 ChangeDir(data, path);
                                 Sie_GUI_Surface_Draw(data->surface);
                                 Sie_Menu_List_Draw(MENU);
                             } else {
-                                WSHDR *ws = AllocWS(12);
                                 size_t len;
                                 sprintf(path, "%s%s", PATH_STACK->dir_name, file->file_name);
                                 len = strlen(path);
@@ -347,7 +344,7 @@ void CreateDefaultFiles() {
     unsigned int err;
     _mkdir(DIR_TEMPLATES, &err);
     ws = AllocWS(64);
-    wsprintf(ws, "%s%t", DIR_TEMPLATES, "Текстовый файл.txt");
+    wsprintf(ws, "%s%t", DIR_TEMPLATES, "New file.txt");
     ws_2str(ws, path, 255);
     FreeWS(ws);
     if (!Sie_FS_FileExists(path)) {
@@ -358,7 +355,7 @@ void CreateDefaultFiles() {
 static void maincsm_oncreate(CSM_RAM *data) {
     DIR_TEMPLATES = malloc(32);
     sprintf(DIR_TEMPLATES, "%d:\\%s", DEFAULT_DISK, "Templates\\");
-    SUBPROC((void*)CreateDefaultFiles);
+    Sie_SubProc_Run(CreateDefaultFiles, NULL);
 
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,

@@ -2,7 +2,6 @@
 #include "../ipc.h"
 #include "../helpers.h"
 
-extern SIE_GUI_STACK *GUI_STACK;
 extern unsigned int MAIN_GUI_ID;
 extern unsigned int SHOW_HIDDEN_FILES;
 
