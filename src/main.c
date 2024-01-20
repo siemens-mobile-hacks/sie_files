@@ -408,7 +408,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
             } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
                 unsigned int row = 0, err = 0;
                 ChangeDir(csm->main_gui, ".");
-                row = Sie_Menu_List_GetIdByName_ws(MENU, ipc->data, &err);
+                row = Sie_Menu_List_GetRowByName_ws(MENU, ipc->data, &err);
                 if (!err) {
                     PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
