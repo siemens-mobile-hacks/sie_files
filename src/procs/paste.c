@@ -22,7 +22,7 @@ char LAST_FILE_NAME[512];
 
 static char *GetMsg(unsigned int id) {
     static char msg[64];
-    sprintf(msg, "%s: %d/%d", (COPY_FILES) ? "Копирование" : "Перемещение", id, COUNT);
+    sprintf(msg, "%s: %d/%d", (COPY_FILES) ? "Copying" : "Moving", id, COUNT);
     return msg;
 }
 
@@ -122,7 +122,7 @@ static void SubProc_Paste() {
                 SIE_GUI_BOX_CALLBACK callback;
                 callback.proc = BoxProc;
                 callback.data = file;
-                Sie_GUI_Box("Файл существует","Вставить", "Заменить", &callback);
+                Sie_GUI_Box("File exists","Paste", "Replace", &callback);
                 WAIT = 1;
                 continue;
             } else {

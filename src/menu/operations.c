@@ -30,15 +30,15 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     data->menu = Sie_Menu_List_Init(data->surface->gui_id);
     if (IsPasteAllow()) {
         item.proc = Paste;
-        Sie_Menu_List_AddItem(data->menu, &item, "Вставить");
+        Sie_Menu_List_AddItem(data->menu, &item, "Paste");
     }
     if (CURRENT_FILE) {
         item.proc = CopyFiles;
-        Sie_Menu_List_AddItem(data->menu, &item, "Копировать");
+        Sie_Menu_List_AddItem(data->menu, &item, "Copy");
         item.proc = MoveFiles;
-        Sie_Menu_List_AddItem(data->menu, &item, "Переместить");
+        Sie_Menu_List_AddItem(data->menu, &item, "Move");
         item.proc = Delete;
-        Sie_Menu_List_AddItem(data->menu, &item, "Удалить");
+        Sie_Menu_List_AddItem(data->menu, &item, "Delete");
     }
     data->gui.state = 1;
 }
@@ -109,7 +109,7 @@ void CreateMenuOperations() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Операции");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Operations");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }

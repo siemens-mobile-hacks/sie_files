@@ -36,13 +36,13 @@ static void OnRedraw(MAIN_GUI *data) {
 void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     if (!IsSelectedCurrentFile()) {
         item->proc = Select;
-        Sie_Menu_List_AddItem(menu, item, "Выделить");
+        Sie_Menu_List_AddItem(menu, item, "Select");
     }
 }
 
 inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     item->proc = CreateMenuOperations;
-    Sie_Menu_List_AddItem(menu, item, "Операции");
+    Sie_Menu_List_AddItem(menu, item, "Operations");
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
@@ -51,11 +51,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     data->menu = Sie_Menu_List_Init(data->gui_id);
     if (!strlen(PATH_STACK->dir_name)) { // disks
         item.proc = CreateDiskInfoGUI;
-        Sie_Menu_List_AddItem(data->menu, &item, "Информация о диске");
+        Sie_Menu_List_AddItem(data->menu, &item, "Disk info");
     } else if (CURRENT_FILE) { // dir or file
         if (!SELECTED_FILES) {
             item.proc = CreateMenuCreate;
-            Sie_Menu_List_AddItem(data->menu, &item, "Создать");
+            Sie_Menu_List_AddItem(data->menu, &item, "Create");
             AddSelectItem(data->menu, &item);
             if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // file
                 AddMenuOperations(data->menu, &item);
@@ -63,7 +63,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
                 if (uid) {
                     if (uid == SIE_EXT_UID_JPG || uid == SIE_EXT_UID_PNG) {
                         item.proc = CreateMenuSetAs;
-                        Sie_Menu_List_AddItem(data->menu, &item, "Задать как...");
+                        Sie_Menu_List_AddItem(data->menu, &item, "Set as...");
                     }
                 }
             } else { // dir
@@ -71,21 +71,19 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             }
         } else {
             AddSelectItem(data->menu, &item);
-            AddMenuOperations(data->menu, &item);
-        }
-        if (SELECTED_FILES) {
             item.proc = UnSelectAll;
-            Sie_Menu_List_AddItem(data->menu, &item, "Отменить все выделения");
+            Sie_Menu_List_AddItem(data->menu, &item, "Unselect all");
+            AddMenuOperations(data->menu, &item);
         }
     } else { // empty :-)
         item.proc = CreateMenuCreate;
-        Sie_Menu_List_AddItem(data->menu, &item, "Создать");
+        Sie_Menu_List_AddItem(data->menu, &item, "Create");
         if (IsPasteAllow()) {
             AddMenuOperations(data->menu, &item);
         }
     }
     item.proc = CreateMenuSettings;
-    Sie_Menu_List_AddItem(data->menu, &item, "Настройки");
+    Sie_Menu_List_AddItem(data->menu, &item, "Settings");
     data->gui.state = 1;
 }
 
@@ -155,7 +153,7 @@ void CreateMenuOptions() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Опции");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Options");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }

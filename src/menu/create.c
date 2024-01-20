@@ -34,11 +34,11 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_FILE *templates = Sie_FS_FindFiles(mask);
     if (templates) {
         item.proc = CreateMenuNewFile;
-        Sie_Menu_List_AddItem(data->menu, &item, "Новый файл");
+        Sie_Menu_List_AddItem(data->menu, &item, "New file");
         Sie_FS_DestroyFiles(templates);
     }
     item.proc = CreateDir;
-    Sie_Menu_List_AddItem(data->menu, &item, "Новую папку");
+    Sie_Menu_List_AddItem(data->menu, &item, "New folder");
 
     data->gui.state = 1;
 }
@@ -109,7 +109,7 @@ void CreateMenuCreate() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Создать");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Create");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }

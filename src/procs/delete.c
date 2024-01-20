@@ -12,7 +12,7 @@ SIE_GUI_BOX_GUI *BOX_GUI;
 
 static char *GetMsg(SIE_FILE *files, unsigned int id) {
     static char msg[64];
-    sprintf(msg, "Удаление файлов: %d/%d", id, COUNT);
+    sprintf(msg, "Deleting files: %d/%d", id, COUNT);
     return msg;
 }
 
@@ -69,6 +69,6 @@ void Delete() {
         callback.data = files;
         COUNT = Sie_FS_GetFilesCount(files);
         CloseChildrenGUI();
-        Sie_GUI_MsgBoxYesNo("Удалить", &callback);
+        Sie_GUI_MsgBoxYesNo("Delete?", &callback);
     }
 }

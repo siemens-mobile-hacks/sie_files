@@ -6,7 +6,7 @@
 #include "procs/procs.h"
 #include "menu/options.h"
 
-#define MAIN_CSM_NAME "Файлы"
+#define MAIN_CSM_NAME "Files"
 
 typedef struct {
     GUI gui;

@@ -28,7 +28,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->surface->gui_id);
     item.proc = SetAsWallpaper;
-    Sie_Menu_List_AddItem(data->menu, &item, "Фон");
+    Sie_Menu_List_AddItem(data->menu, &item, "Wallpaper");
     data->gui.state = 1;
 }
 
@@ -98,7 +98,7 @@ void CreateMenuSetAs() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Задать как");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "Set as...");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }
