@@ -2,9 +2,10 @@
 #include "../ipc.h"
 #include "../helpers.h"
 
-extern SIE_MENU_LIST *MENU;
+extern SIE_FILE *FILES;
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
+extern SIE_MENU_LIST *MENU;
 
 void Select() {
     if (CURRENT_FILE && !(CURRENT_FILE->file_attr & SIE_FS_FA_VOLUME)) {
@@ -48,6 +49,17 @@ void UnSelect() {
             }
         }
     }
+}
+
+void SelectAll() {
+    Sie_FS_DestroyFiles(SELECTED_FILES);
+    SELECTED_FILES = Sie_FS_CloneFiles(FILES);
+    for (unsigned int i = 0; i < MENU->n_items; i++) {
+        SIE_MENU_LIST_ITEM *item = Sie_Menu_List_GetItem(MENU, i);
+        Sie_Menu_List_SetItemType(item, SIE_MENU_LIST_ITEM_TYPE_CHECKBOX, 1);
+    }
+    CloseChildrenGUI();
+    DirectRedrawGUI();
 }
 
 void UnSelectAll() {

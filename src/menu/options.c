@@ -33,11 +33,13 @@ static void OnRedraw(MAIN_GUI *data) {
     Sie_Menu_List_Draw(data->menu);
 }
 
-void AddSelectItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+void AddSelectItems(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     if (!IsSelectedCurrentFile()) {
         item->proc = Select;
         Sie_Menu_List_AddItem(menu, item, "Select");
     }
+    item->proc = SelectAll;
+    Sie_Menu_List_AddItem(menu, item, "Select all");
 }
 
 inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
@@ -56,7 +58,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         if (!SELECTED_FILES) {
             item.proc = CreateMenuCreate;
             Sie_Menu_List_AddItem(data->menu, &item, "Create");
-            AddSelectItem(data->menu, &item);
+            AddSelectItems(data->menu, &item);
             if (!(CURRENT_FILE->file_attr & SIE_FS_FA_DIRECTORY)) { // file
                 AddMenuOperations(data->menu, &item);
                 int uid = Sie_Ext_GetExtUidByFileName(CURRENT_FILE->file_name);
@@ -70,7 +72,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
                 AddMenuOperations(data->menu, &item);
             }
         } else {
-            AddSelectItem(data->menu, &item);
+            AddSelectItems(data->menu, &item);
             item.proc = UnSelectAll;
             Sie_Menu_List_AddItem(data->menu, &item, "Unselect all");
             AddMenuOperations(data->menu, &item);

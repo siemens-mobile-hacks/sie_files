@@ -3,6 +3,7 @@
 
 void Select();
 void UnSelect();
+void SelectAll();
 void UnSelectAll();
 void ToggleSelect();
 unsigned int IsSelectedCurrentFile();
