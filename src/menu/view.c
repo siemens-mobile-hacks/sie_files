@@ -1,6 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
+#include "../procs/procs.h"
 
 typedef struct {
     GUI gui;
@@ -14,6 +15,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
+extern unsigned int SHOW_HIDDEN_FILES;
 
 /**********************************************************************************************************************/
 
@@ -26,6 +28,10 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->surface->gui_id);
+    item.type = SIE_MENU_LIST_ITEM_TYPE_CHECKBOX;
+    item.flag = SHOW_HIDDEN_FILES;
+    item.proc = ToggleHiddenFiles;
+    Sie_Menu_List_AddItem(data->menu, &item, "Show hidden files");
     data->gui.state = 1;
 }
 
@@ -82,7 +88,7 @@ static const void *const gui_methods[11] = {
         0
 };
 
-void CreateMenuSettings() {
+void CreateMenuView() {
     const SIE_GUI_SURFACE_HANDLERS handlers = {
             NULL,
             (int(*)(void *, GUI_MSG *msg))_OnKey,
@@ -95,7 +101,7 @@ void CreateMenuSettings() {
     main_gui->gui.item_ll.data_mfree = (void (*)(void *))mfree_adr();
     main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
                                              CreateGUI(main_gui));
-    wsprintf(main_gui->surface->hdr_ws, "%t", "Settings");
+    wsprintf(main_gui->surface->hdr_ws, "%t", "View");
     GUI_STACK = Sie_GUI_Stack_Add(GUI_STACK, &(main_gui->gui), main_gui->surface->gui_id);
     UnlockSched();
 }

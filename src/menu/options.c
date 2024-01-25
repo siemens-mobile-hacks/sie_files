@@ -1,6 +1,7 @@
 #include <swilib.h>
 #include <stdlib.h>
 #include <sie/sie.h>
+#include "view.h"
 #include "create.h"
 #include "set_as.h"
 #include "settings.h"
@@ -47,6 +48,11 @@ inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     Sie_Menu_List_AddItem(menu, item, "Operations");
 }
 
+inline void AddMenuView(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+    item->proc = CreateMenuView;
+    Sie_Menu_List_AddItem(menu, item, "View");
+}
+
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
@@ -54,6 +60,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     if (!strlen(PATH_STACK->dir_name)) { // disks
         item.proc = CreateDiskInfoGUI;
         Sie_Menu_List_AddItem(data->menu, &item, "Disk info");
+        AddMenuView(data->menu, &item);
     } else if (CURRENT_FILE) { // dir or file
         if (!SELECTED_FILES) {
             item.proc = CreateMenuCreate;
@@ -71,6 +78,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
             } else { // dir
                 AddMenuOperations(data->menu, &item);
             }
+            AddMenuView(data->menu, &item);
         } else {
             AddSelectItems(data->menu, &item);
             item.proc = UnSelectAll;
