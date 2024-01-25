@@ -91,6 +91,7 @@ static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
         if (IsPasteAllow()) {
             AddMenuOperations(data->menu, &item);
         }
+        AddMenuView(data->menu, &item);
     }
     item.proc = CreateMenuSettings;
     Sie_Menu_List_AddItem(data->menu, &item, "Settings");

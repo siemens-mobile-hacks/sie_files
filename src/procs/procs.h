@@ -1,6 +1,7 @@
 #ifndef __PROCS_H__
 #define __PROCS_H__
 
+#include "sort.h"
 #include "paste.h"
 #include "delete.h"
 #include "select.h"

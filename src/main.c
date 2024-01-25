@@ -38,6 +38,7 @@ path_stack_t *PATH_STACK;
 SIE_GUI_STACK *GUI_STACK;
 unsigned int MAIN_GUI_ID;
 
+unsigned int SORT = SORT_BY_NAME_ASC;
 unsigned int SHOW_HIDDEN_FILES = 1;
 
 /**********************************************************************************************************************/
@@ -192,8 +193,18 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
         mask = malloc(strlen(p->dir_name) + 1 + 1);
         sprintf(mask, "%s*", p->dir_name);
         FILES = Sie_FS_FindFiles(mask);
-        FILES = Sie_FS_SortFilesByName(FILES, 1);
         mfree(mask);
+    }
+    switch (SORT) {
+        case SORT_BY_NAME_ASC:
+            FILES = Sie_FS_SortFilesByNameAsc(FILES, 1);
+            break;
+        case SORT_BY_NAME_DESC:
+            FILES = Sie_FS_SortFilesByNameDesc(FILES, 1);
+            break;
+        default:
+            FILES = Sie_FS_SortFilesByNameAsc(FILES, 1);
+            break;
     }
     if (!SHOW_HIDDEN_FILES) {
         FILES = Sie_FS_ExcludeFilesByFileAttr(FILES, SIE_FS_FA_HIDDEN);

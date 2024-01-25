@@ -15,6 +15,8 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 
 extern RECT canvas;
 extern SIE_GUI_STACK *GUI_STACK;
+
+extern unsigned int SORT;
 extern unsigned int SHOW_HIDDEN_FILES;
 
 /**********************************************************************************************************************/
@@ -24,10 +26,21 @@ static void OnRedraw(MAIN_GUI *data) {
     Sie_Menu_List_Draw(data->menu);
 }
 
+void AddSortItem(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item, const char *name, unsigned int order) {
+    item->type = SIE_MENU_LIST_ITEM_TYPE_RADIO;
+    item->flag = (SORT == order);
+    item->proc = Sort;
+    Sie_Menu_List_AddItem(menu, item, name);
+}
+
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     SIE_MENU_LIST_ITEM item;
     zeromem(&item, sizeof(SIE_MENU_LIST_ITEM));
     data->menu = Sie_Menu_List_Init(data->surface->gui_id);
+
+    AddSortItem(data->menu, &item, "Sort by name ASC", SORT_BY_NAME_ASC);
+    AddSortItem(data->menu, &item, "Sort by name DESC", SORT_BY_NAME_DESC);
+    Sie_Menu_List_AddSeparator(data->menu);
     item.type = SIE_MENU_LIST_ITEM_TYPE_CHECKBOX;
     item.flag = SHOW_HIDDEN_FILES;
     item.proc = ToggleHiddenFiles;
