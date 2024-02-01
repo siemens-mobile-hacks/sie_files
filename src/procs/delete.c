@@ -7,8 +7,8 @@ extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
 extern SIE_GUI_STACK *GUI_STACK;
 
-int COUNT;
-static SIE_GUI_BOX_GUI *BOX_GUI;
+static int COUNT;
+static SIE_GUI_BOX *BOX_GUI;
 
 static char *GetMsg(SIE_FILE *files, unsigned int id) {
     static char msg[64];
@@ -41,7 +41,7 @@ static void DeleteFiles(SIE_FILE *files) {
 static void SubProc_Delete(SIE_FILE *files) {   
     DeleteFiles(files);
     Sie_FS_DestroyFiles(files);
-    Sie_GUI_CloseGUI_GBS(BOX_GUI->surface->gui_id);
+    Sie_GUI_CloseGUI(BOX_GUI->surface->gui_id);
     IPC_Reload();
     BOX_GUI = NULL;
 }

@@ -8,7 +8,7 @@ extern SIE_GUI_STACK *GUI_STACK;
 extern const char *DIR_TEMPLATES;
 extern unsigned int MAIN_GUI_ID;
 
-SIE_GUI_BOX_GUI *BOX_GUI;
+SIE_GUI_BOX *BOX_GUI;
 
 void SUBPROC_CreateNewFile(WSHDR *ws) {
     size_t len = wstrlen(ws) * 4;

@@ -400,7 +400,7 @@ static void maincsm_onclose(CSM_RAM *csm) {
 
 void Reload(MAIN_GUI *data) {
     ChangeDir(data, ".");
-    DirectRedrawGUI();
+    DirectRedrawGUI_ID(MAIN_GUI_ID);
 }
 
 static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {

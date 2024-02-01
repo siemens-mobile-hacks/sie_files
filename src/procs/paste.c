@@ -16,9 +16,9 @@ extern SIE_GUI_STACK *GUI_STACK;
 extern unsigned int MAIN_GUI_ID;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
-volatile unsigned int WAIT;
+unsigned int WAIT;
 static unsigned int COUNT;
-static SIE_GUI_BOX_GUI *BOX_GUI;
+static SIE_GUI_BOX *BOX_GUI;
 char LAST_FILE_NAME[512];
 
 static char *GetMsg(unsigned int id) {
@@ -120,10 +120,11 @@ static void SubProc_Paste() {
             char *dest = malloc(strlen(dir_name) + strlen(file->file_name) + 1);
             sprintf(dest, "%s%s", dir_name, file->file_name);
             if (Sie_FS_FileExists(dest)) {
+                SIE_GUI_BOX_TEXT text = {"File exists", "Paste", "Replace"};
                 SIE_GUI_BOX_CALLBACK callback;
                 callback.proc = BoxProc;
                 callback.data = file;
-                Sie_GUI_Box("File exists","Paste", "Replace", &callback);
+                Sie_GUI_Box(SIE_GUI_BOX_TYPE_QUESTION, &text, &callback);
                 WAIT = 1;
                 continue;
             } else {
@@ -141,7 +142,7 @@ static void SubProc_Paste() {
         } else break;
     }
 
-    Sie_GUI_CloseGUI_GBS(BOX_GUI->surface->gui_id);
+    Sie_GUI_CloseGUI(BOX_GUI->surface->gui_id);
 
     size_t len = strlen(LAST_FILE_NAME);
     if (len) {
