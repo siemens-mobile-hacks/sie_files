@@ -1,5 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
+#include <nu_swilib.h>
 #include <sie/sie.h>
 #include "../ipc.h"
 #include "../helpers.h"
@@ -16,8 +17,8 @@ extern unsigned int MAIN_GUI_ID;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
 volatile unsigned int WAIT;
-unsigned int COUNT;
-SIE_GUI_BOX_GUI *BOX_GUI;
+static unsigned int COUNT;
+static SIE_GUI_BOX_GUI *BOX_GUI;
 char LAST_FILE_NAME[512];
 
 static char *GetMsg(unsigned int id) {

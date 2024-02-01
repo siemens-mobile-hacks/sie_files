@@ -8,7 +8,7 @@ extern SIE_FILE *SELECTED_FILES;
 extern SIE_GUI_STACK *GUI_STACK;
 
 int COUNT;
-SIE_GUI_BOX_GUI *BOX_GUI;
+static SIE_GUI_BOX_GUI *BOX_GUI;
 
 static char *GetMsg(SIE_FILE *files, unsigned int id) {
     static char msg[64];
