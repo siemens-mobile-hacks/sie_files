@@ -165,7 +165,7 @@ unsigned int IsPasteAllow() {
 static void Proc() {
     LAST_FILE_NAME[0] = '\0';
     COUNT = Sie_FS_GetFilesCount((COPY_FILES) ? COPY_FILES : MOVE_FILES);
-    BOX_GUI = Sie_GUI_MsgBox(GetMsg(0));
+    BOX_GUI = Sie_GUI_WaitBox(GetMsg(0));
     Sie_SubProc_Run(SubProc_Paste, NULL);
 }
 

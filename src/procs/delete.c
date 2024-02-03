@@ -48,7 +48,7 @@ static void SubProc_Delete(SIE_FILE *files) {
 
 static void BoxProc(int flag, void *data) {
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
-        BOX_GUI = Sie_GUI_MsgBox(GetMsg(SELECTED_FILES, 0));
+        BOX_GUI = Sie_GUI_WaitBox(GetMsg(SELECTED_FILES, 0));
         Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->surface->gui_id);
         Sie_SubProc_Run(SubProc_Delete, data);
         SELECTED_FILES = NULL;
