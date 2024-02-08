@@ -3,6 +3,7 @@
 #include <nu_swilib.h>
 #include <sie/sie.h>
 #include "../ipc.h"
+#include "../msg.h"
 #include "../helpers.h"
 #include "../path_stack.h"
 
@@ -27,17 +28,25 @@ static char *GetMsg(unsigned int id) {
     return msg;
 }
 
-static void CopyOrMoveFile(const char *src, const char *dest) {
+static void CopyOrMoveFile(SIE_FILE *src, const char *dest) {
     unsigned int err = 0;
+    char *s = Sie_FS_GetPathByFile(src);
     if (COPY_FILES) {
-        if (Sie_FS_IsDir(src, &err)) {
-            Sie_FS_CopyDir(src, dest, &err);
+        if (Sie_FS_IsDir(s, &err)) {
+            if (!Sie_FS_CopyDir(s, dest, &err)) {
+                MsgBoxError_FileAction(src, "copy");
+            };
         } else {
-            Sie_FS_CopyFile(src, dest, &err);
+            if (!Sie_FS_CopyFile(s, dest, &err)) {
+                MsgBoxError_FileAction(src, "copy");
+            };
         }
     } else {
-        Sie_FS_MoveFile(src, dest, &err);
+        if (!Sie_FS_MoveFile(s, dest, &err)) {
+            MsgBoxError_FileAction(src, "move");
+        };
     }
+    mfree(s);
 }
 
 static void SubProc_Box(SUBPROC_DATA *data) {
@@ -45,11 +54,10 @@ static void SubProc_Box(SUBPROC_DATA *data) {
     unsigned int flag = data->flag;
     SIE_FILE *file = (SIE_FILE*)data->data;
     SIE_FILE *new_file = NULL;
-    char *src = Sie_FS_GetPathByFile(file);
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
         new_file = GetUniqueFileInCurrentDir(file);
         char *dest = Sie_FS_GetPathByFile(new_file);
-        CopyOrMoveFile(src, dest);
+        CopyOrMoveFile(file, dest);
         mfree(dest);
     } else {
         new_file = Sie_FS_CopyFileElement(file);
@@ -60,14 +68,13 @@ static void SubProc_Box(SUBPROC_DATA *data) {
         char *dest = Sie_FS_GetPathByFile(new_file);
         if (new_file->file_attr & SIE_FS_FA_DIRECTORY) {
             Sie_FS_DeleteDirRecursive(dest, &err);
-            CopyOrMoveFile(src, dest);
+            CopyOrMoveFile(file, dest);
         } else {
             Sie_FS_DeleteFile(dest, &err);
-            CopyOrMoveFile(src, dest);
+            CopyOrMoveFile(file, dest);
         }
         mfree(dest);
     }
-    mfree(src);
     strcpy(LAST_FILE_NAME, new_file->file_name);
     Sie_FS_DestroyFileElement(new_file);
     WAIT = 2;
@@ -107,9 +114,13 @@ static void SubProc_Paste() {
             if (COPY_FILES) {
                 char *src = Sie_FS_GetPathByFile(file);
                 if (Sie_FS_IsDir(src, &err)) {
-                    Sie_FS_CopyDir(src, dest, &err);
+                    if (!Sie_FS_CopyDir(src, dest, &err)) {
+                        MsgBoxError_FileAction(file, "copy");
+                    }
                 } else {
-                    Sie_FS_CopyFile(src, dest, &err);
+                    if (!Sie_FS_CopyFile(src, dest, &err)) {
+                        MsgBoxError_FileAction(file, "copy");
+                    }
                 }
                 mfree(src);
             }
@@ -128,9 +139,7 @@ static void SubProc_Paste() {
                 WAIT = 1;
                 continue;
             } else {
-                char *src = Sie_FS_GetPathByFile(file);
-                CopyOrMoveFile(src, dest);
-                mfree(src);
+                CopyOrMoveFile(file, dest);
                 strcpy(LAST_FILE_NAME, file->file_name);
             }
             mfree(dest);

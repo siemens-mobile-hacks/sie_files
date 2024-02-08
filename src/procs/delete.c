@@ -1,6 +1,8 @@
+#include <stdlib.h>
 #include <sie/sie.h>
 #include "procs.h"
 #include "../ipc.h"
+#include "../msg.h"
 #include "../helpers.h"
 
 extern SIE_FILE *CURRENT_FILE;
@@ -22,15 +24,19 @@ static void Update(SIE_FILE *files, SIE_FILE *file, unsigned int id) {
 }
 
 static void DeleteFiles(SIE_FILE *files) {
-    unsigned int err;
+    unsigned int err = 0;
     unsigned int i = 0;
     SIE_FILE *file = (SIE_FILE*)files;
     while (file) {
         char *path = Sie_FS_GetPathByFile(file);
         if (file->file_attr & SIE_FS_FA_DIRECTORY) {
-            Sie_FS_DeleteDirRecursive(path, &err);
+            if (!Sie_FS_DeleteDirRecursive(path, &err)) {
+                MsgBoxError_FileAction(file, "delete");
+            }
         } else {
-            Sie_FS_DeleteFile(path, &err);
+            if (!Sie_FS_DeleteFile(path, &err)) {
+                MsgBoxError_FileAction(file, "delete");
+            }
         }
         mfree(path);
         Update(files, file, i++);
