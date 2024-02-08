@@ -96,7 +96,6 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
         zeromem(item, sizeof(SIE_MENU_LIST_ITEM));
 
         // icon
-        SIE_RESOURCES_IMG *res_img = NULL;
         if (file->file_attr & SIE_FS_FA_VOLUME) {
             char name[8];
             if (strcmp(file->file_name, "4:") == 0) {
@@ -104,24 +103,21 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
             } else {
                 strcpy(name, "disk");
             }
-            res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_DEVICES, 24, name);
+            item->icon = Sie_Resources_LoadIMGHDR(SIE_RESOURCES_TYPE_DEVICES, 24, name);
         }
         else if (file->file_attr & SIE_FS_FA_DIRECTORY) {
-            res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
+            item->icon = Sie_Resources_LoadIMGHDR(SIE_RESOURCES_TYPE_PLACES, 24, "folder");
         } else {
             char *ext = Sie_Ext_GetExtByFileName(file->file_name);
             if (ext) {
-                res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, ext);
-                if (!res_img) {
-                    res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
+                item->icon = Sie_Resources_LoadIMGHDR(SIE_RESOURCES_TYPE_EXT, 24, ext);
+                if (!item->icon) {
+                    item->icon = Sie_Resources_LoadIMGHDR(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
                 }
                 mfree(ext);
             } else {
-                res_img = Sie_Resources_LoadImage(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
+                item->icon = Sie_Resources_LoadIMGHDR(SIE_RESOURCES_TYPE_EXT, 24, "unknown");
             }
-        }
-        if (res_img) {
-            item->icon = res_img->icon;
         }
         // ws
         char *name = (file->alias) ? file->alias : file->file_name;
