@@ -4,9 +4,9 @@
 #include "../ipc.h"
 #include "../helpers.h"
 
+extern SIE_GUI_SURFACE *SURFACE;
 extern SIE_GUI_STACK *GUI_STACK;
 extern const char *DIR_TEMPLATES;
-extern unsigned int MAIN_GUI_ID;
 
 SIE_GUI_BOX *BOX_GUI;
 
@@ -49,7 +49,7 @@ void CreateNewFile(SIE_MENU_LIST_ITEM *menu_item, unsigned int row) {
     static GBSTMR tmr;
     static SIE_GUI_FOCUS_DATA data;
     size_t len = wstrlen(menu_item->ws);
-    data.gui_id = MAIN_GUI_ID;
+    data.gui_id = SURFACE->gui_id;
     data.proc = (void*)(void*)Proc;
     data.data = AllocWS(len);
     wstrcpy(data.data, menu_item->ws);

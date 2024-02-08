@@ -4,9 +4,9 @@
 #include "helpers.h"
 #include "path_stack.h"
 
+extern SIE_GUI_SURFACE *SURFACE;
 extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
-extern unsigned int MAIN_GUI_ID;
 
 SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
     SIE_FILE *f = Sie_FS_CopyFileElement(file);
@@ -20,5 +20,5 @@ SIE_FILE *GetUniqueFileInCurrentDir(SIE_FILE *file) {
 }
 
 void CloseChildrenGUI() {
-    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, MAIN_GUI_ID);
+    GUI_STACK = Sie_GUI_Stack_CloseChildren(GUI_STACK, SURFACE->gui_id);
 }

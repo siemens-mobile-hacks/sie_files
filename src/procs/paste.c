@@ -12,9 +12,9 @@ typedef struct {
     void *data;
 } SUBPROC_DATA;
 
+extern SIE_GUI_SURFACE *SURFACE;
 extern path_stack_t *PATH_STACK;
 extern SIE_GUI_STACK *GUI_STACK;
-extern unsigned int MAIN_GUI_ID;
 extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 
 unsigned int WAIT;
@@ -183,7 +183,7 @@ void Paste(void) {
         static GBSTMR tmr;
         static SIE_GUI_FOCUS_DATA data;
         CloseChildrenGUI();
-        data.gui_id = MAIN_GUI_ID;
+        data.gui_id = SURFACE->gui_id;
         data.proc = Proc;
         data.data = NULL;
         Sie_GUI_FocusGUI(&tmr, &data);

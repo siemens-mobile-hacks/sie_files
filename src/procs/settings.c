@@ -2,7 +2,7 @@
 #include "../ipc.h"
 #include "../helpers.h"
 
-extern unsigned int MAIN_GUI_ID;
+extern SIE_GUI_SURFACE *SURFACE;
 extern unsigned int SHOW_HIDDEN_FILES;
 
 void Proc(void *data) {
@@ -14,7 +14,7 @@ void Proc(void *data) {
 void ToggleHiddenFiles(SIE_MENU_LIST_ITEM *item, unsigned int row) {
     static GBSTMR tmr;
     static SIE_GUI_FOCUS_DATA data;
-    data.gui_id = MAIN_GUI_ID;
+    data.gui_id = SURFACE->gui_id;
     data.proc = Proc;
     data.data = (void*)(!item->flag);
     CloseChildrenGUI();

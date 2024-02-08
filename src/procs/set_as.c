@@ -3,8 +3,8 @@
 #include <sie/sie.h>
 #include "../helpers.h"
 
+extern SIE_GUI_SURFACE *SURFACE;
 extern SIE_FILE *CURRENT_FILE;
-extern unsigned int MAIN_GUI_ID;
 
 static SIE_GUI_BOX *BOX_GUI;
 
@@ -25,7 +25,7 @@ static void Proc() {
 void SetAsWallpaper() {
     static GBSTMR tmr;
     static SIE_GUI_FOCUS_DATA data;
-    data.gui_id = MAIN_GUI_ID;
+    data.gui_id = SURFACE->gui_id;
     data.proc = Proc;
     data.data = NULL;
     CloseChildrenGUI();

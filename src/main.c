@@ -10,7 +10,6 @@
 
 typedef struct {
     GUI gui;
-    SIE_GUI_SURFACE *surface;
 } MAIN_GUI;
 
 typedef struct {
@@ -29,6 +28,7 @@ const int minus11 = -11;
 unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
+SIE_GUI_SURFACE *SURFACE;
 SIE_MENU_LIST *MENU;
 SIE_FILE *FILES;
 SIE_FILE *CURRENT_FILE;
@@ -36,7 +36,6 @@ SIE_FILE *SELECTED_FILES;
 SIE_FILE *COPY_FILES, *MOVE_FILES;
 path_stack_t *PATH_STACK;
 SIE_GUI_STACK *GUI_STACK;
-unsigned int MAIN_GUI_ID;
 
 unsigned int SORT = SORT_BY_NAME_ASC;
 unsigned int SHOW_HIDDEN_FILES = 1;
@@ -139,16 +138,16 @@ inline char GetAttr(int attr, char c) {
     return (CURRENT_FILE->file_attr & attr) ? c : '-';
 }
 
-void UpdateHeader(MAIN_GUI *data) {
+void UpdateHeader() {
     if (CURRENT_FILE) {
-        wsprintf(data->surface->hdr_ws, "%c%c%c%c\t%d/%d",
+        wsprintf(SURFACE->hdr_ws, "%c%c%c%c\t%d/%d",
                  GetAttr(SIE_FS_FA_READONLY, 'r'),
                  GetAttr(SIE_FS_FA_HIDDEN, 'h'),
                  GetAttr(SIE_FS_FA_SYSTEM, 's'),
                  GetAttr(SIE_FS_FA_DIRECTORY, 'd'),
                  MENU->row + 1, MENU->n_items);
     } else {
-        wsprintf(data->surface->hdr_ws, "");
+        wsprintf(SURFACE->hdr_ws, "");
     }
 }
 
@@ -169,7 +168,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     FILES = NULL;
     SELECTED_FILES = NULL;
     Sie_Menu_List_Destroy(MENU);
-    MENU = Sie_Menu_List_Init(data->surface->gui_id);
+    MENU = Sie_Menu_List_Init(SURFACE->gui_id);
 
     path_stack_t *p = NULL;
     if (strcmp(path, ".") == 0) { // update
@@ -217,7 +216,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
 /**********************************************************************************************************************/
 
 static void OnRedraw(MAIN_GUI *data) {
-    Sie_GUI_Surface_Draw(data->surface);
+    Sie_GUI_Surface_Draw(SURFACE);
     Sie_Menu_List_Draw(MENU);
 }
 
@@ -241,12 +240,12 @@ static void OnClose(MAIN_GUI *data, void (*mfree_adr)(void *)) {
 
 static void OnFocus(MAIN_GUI *data, void *(*malloc_adr)(int), void (*mfree_adr)(void *)) {
     data->gui.state = 2;
-    Sie_GUI_Surface_OnFocus(data->surface);
+    Sie_GUI_Surface_OnFocus(SURFACE);
 }
 
 static void OnUnFocus(MAIN_GUI *data, void (*mfree_adr)(void *)) {
     if (data->gui.state != 2) return;
-    Sie_GUI_Surface_OnUnFocus(data->surface);
+    Sie_GUI_Surface_OnUnFocus(SURFACE);
     data->gui.state = 1;
 }
 
@@ -260,8 +259,8 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
             case SIE_MENU_LIST_KEY_NEXT:
                 PATH_STACK->row = MENU->row;
                 SetCurrentFile(FILES, MENU->row);
-                UpdateHeader(data);
-                Sie_GUI_Surface_Draw(data->surface);
+                UpdateHeader();
+                Sie_GUI_Surface_Draw(SURFACE);
                 break;
             case SIE_MENU_LIST_KEY_ENTER:
                 if (MENU->n_items) {
@@ -277,7 +276,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                             if (file->file_attr & (SIE_FS_FA_VOLUME | SIE_FS_FA_DIRECTORY)) {
                                 sprintf(path, "%s%s\\", PATH_STACK->dir_name, file->file_name);
                                 ChangeDir(data, path);
-                                Sie_GUI_Surface_Draw(data->surface);
+                                Sie_GUI_Surface_Draw(SURFACE);
                                 Sie_Menu_List_Draw(MENU);
                             } else {
                                 size_t len;
@@ -303,7 +302,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
                     return 1;
                 } else {
                     ChangeDir(data, "..");
-                    Sie_GUI_Surface_Draw(data->surface);
+                    Sie_GUI_Surface_Draw(SURFACE);
                     Sie_Menu_List_Draw(MENU);
                 }
                 break;
@@ -322,7 +321,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg) {
 }
 
 static int OnKey(MAIN_GUI *data, GUI_MSG *msg) {
-    return Sie_GUI_Surface_OnKey(data->surface, data, msg);
+    return Sie_GUI_Surface_OnKey(SURFACE, data, msg);
 }
 
 extern void kill_data(void *p, void (*func_p)(void *));
@@ -378,10 +377,9 @@ static void maincsm_oncreate(CSM_RAM *data) {
     csm->csm.state = 0;
     csm->csm.unk1 = 0;
     csm->main_gui = main_gui;
-    MAIN_GUI_ID = CreateGUI(main_gui);
-    main_gui->surface = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
-                                             MAIN_GUI_ID);
-    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), MAIN_GUI_ID);
+    SURFACE = Sie_GUI_Surface_Init(SIE_GUI_SURFACE_TYPE_DEFAULT, &handlers,
+                                   CreateGUI(main_gui));
+    GUI_STACK = Sie_GUI_Stack_Add(NULL, &(main_gui->gui), SURFACE->gui_id);
 }
 
 void KillElf() {
@@ -396,12 +394,12 @@ static void maincsm_onclose(CSM_RAM *csm) {
 
 void Reload(MAIN_GUI *data) {
     ChangeDir(data, ".");
-    DirectRedrawGUI_ID(MAIN_GUI_ID);
+    DirectRedrawGUI_ID(SURFACE->gui_id);
 }
 
 static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
     MAIN_CSM *csm = (MAIN_CSM*)data;
-    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == csm->main_gui->surface->gui_id)) {
+    if ((msg->msg == MSG_GUI_DESTROYED) && ((int)msg->data0 == SURFACE->gui_id)) {
         csm->csm.state = -3;
     }
     else if (msg->msg == MSG_IPC) {
@@ -416,7 +414,7 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
                 if (!err) {
                     PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
                     Sie_Menu_List_Refresh(MENU);
-                    DirectRedrawGUI_ID(csm->main_gui->surface->gui_id);
+                    DirectRedrawGUI_ID(SURFACE->gui_id);
                 }
                 SetCurrentFile(FILES, row);
                 FreeWS(ipc->data);
