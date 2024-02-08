@@ -135,7 +135,7 @@ static void SubProc_Paste() {
                 SIE_GUI_BOX_CALLBACK callback;
                 callback.proc = BoxProc;
                 callback.data = file;
-                Sie_GUI_Box(SIE_GUI_BOX_TYPE_QUESTION, &text, &callback);
+                Sie_GUI_Box(SIE_GUI_BOX_TYPE_QUESTION, &text, &callback, SURFACE->scrot);
                 WAIT = 1;
                 continue;
             } else {
@@ -174,7 +174,8 @@ unsigned int IsPasteAllow() {
 static void Proc() {
     LAST_FILE_NAME[0] = '\0';
     COUNT = Sie_FS_GetFilesCount((COPY_FILES) ? COPY_FILES : MOVE_FILES);
-    BOX_GUI = Sie_GUI_WaitBox(GetMsg(0));
+    Sie_GUI_Surface_TakeScrot(SURFACE);
+    BOX_GUI = Sie_GUI_WaitBox(GetMsg(0), SURFACE->scrot);
     Sie_SubProc_Run(SubProc_Paste, NULL);
 }
 

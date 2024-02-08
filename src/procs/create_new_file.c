@@ -41,7 +41,8 @@ void SUBPROC_CreateNewFile(WSHDR *ws) {
 }
 
 static void Proc(WSHDR *ws) {
-    BOX_GUI = Sie_GUI_WaitBox("Creating file...");
+    Sie_GUI_Surface_TakeScrot(SURFACE);
+    Sie_GUI_WaitBox("Creating file...", SURFACE->scrot);
     Sie_SubProc_Run(SUBPROC_CreateNewFile, ws);
 }
 

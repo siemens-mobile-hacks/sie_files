@@ -5,6 +5,7 @@
 #include "../msg.h"
 #include "../helpers.h"
 
+extern SIE_GUI_SURFACE *SURFACE;
 extern SIE_FILE *CURRENT_FILE;
 extern SIE_FILE *SELECTED_FILES;
 extern SIE_GUI_STACK *GUI_STACK;
@@ -54,7 +55,7 @@ static void SubProc_Delete(SIE_FILE *files) {
 
 static void BoxProc(int flag, void *data) {
     if (flag == SIE_GUI_BOX_CALLBACK_YES) {
-        BOX_GUI = Sie_GUI_WaitBox(GetMsg(0));
+        BOX_GUI = Sie_GUI_WaitBox(GetMsg(0), SURFACE->scrot);
         Sie_GUI_Stack_Add(GUI_STACK, &(BOX_GUI->gui), BOX_GUI->surface->gui_id);
         Sie_SubProc_Run(SubProc_Delete, data);
         SELECTED_FILES = NULL;
@@ -75,6 +76,7 @@ void Delete() {
         callback.data = files;
         COUNT = Sie_FS_GetFilesCount(files);
         CloseChildrenGUI();
-        Sie_GUI_MsgBoxYesNo("Delete?", &callback);
+        Sie_GUI_Surface_TakeScrot(SURFACE);
+        Sie_GUI_MsgBoxYesNo("Delete?", &callback, SURFACE->scrot);
     }
 }
