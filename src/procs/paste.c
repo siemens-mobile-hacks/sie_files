@@ -20,7 +20,7 @@ extern SIE_FILE *COPY_FILES, *MOVE_FILES;
 unsigned int WAIT;
 static unsigned int COUNT;
 static SIE_GUI_BOX *BOX_GUI;
-char LAST_FILE_NAME[512];
+char LAST_FILE_NAME[320];
 
 static char *GetMsg(unsigned int id) {
     static char msg[64];
@@ -37,7 +37,7 @@ static void CopyOrMoveFile(SIE_FILE *src, const char *dest) {
                 MsgBoxError_FileAction(src, "copy");
             };
         } else {
-            if (!Sie_FS_CopyFile(s, dest, &err)) {
+            if (Sie_FS_CopyFile(s, dest, &err) < 0) {
                 MsgBoxError_FileAction(src, "copy");
             };
         }
@@ -87,15 +87,10 @@ static void BoxProc(int flag, void *data) {
     Sie_SubProc_Run(SubProc_Box, &subproc_data);
 }
 
-static void Update(SIE_FILE *file, unsigned int id) {
-    wsprintf(BOX_GUI->msg_ws, "%t", GetMsg(id + 1));
-    PendedRedrawGUI();
-}
-
 static void SubProc_Paste() {
-    unsigned int id = 0;
     SIE_FILE *files = (COPY_FILES) ? COPY_FILES : MOVE_FILES;
 
+    unsigned int i = 0;
     SIE_FILE *file = files;
     while (1) {
         if (WAIT == 1) {
@@ -118,7 +113,7 @@ static void SubProc_Paste() {
                         MsgBoxError_FileAction(file, "copy");
                     }
                 } else {
-                    if (!Sie_FS_CopyFile(src, dest, &err)) {
+                    if (Sie_FS_CopyFile(src, dest, &err) < 0) {
                         MsgBoxError_FileAction(file, "copy");
                     }
                 }
@@ -145,20 +140,17 @@ static void SubProc_Paste() {
             mfree(dest);
         }
         END:
-        Update(file, id++);
+        Sie_GUI_BoxUpdate(BOX_GUI, GetMsg(++i));
         if (file->next) {
             file = file->next;
         } else break;
     }
 
-    Sie_GUI_CloseGUI(BOX_GUI->surface->gui_id);
+    Sie_GUI_BoxClose(BOX_GUI);
 
     size_t len = strlen(LAST_FILE_NAME);
     if (len) {
-        WSHDR *ws = AllocWS(len);
-        str_2ws(ws, LAST_FILE_NAME, len);
-        IPC_Reload();
-        IPC_SetRowByFileName_ws(ws);
+        IPC_SetRowByFileName(LAST_FILE_NAME);
     }
     Sie_FS_DestroyFiles(files);
     COPY_FILES = MOVE_FILES = NULL;

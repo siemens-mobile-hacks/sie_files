@@ -1,4 +1,6 @@
+#include <swilib.h>
 #include <stdlib.h>
+#include <nu_swilib.h>
 #include <sie/sie.h>
 #include "procs.h"
 #include "../ipc.h"
@@ -19,11 +21,6 @@ static char *GetMsg(unsigned int id) {
     return msg;
 }
 
-static void Update(unsigned int id) {
-    wsprintf(BOX_GUI->msg_ws, "%t", GetMsg(id + 1));
-    PendedRedrawGUI();
-}
-
 static void DeleteFiles(SIE_FILE *files) {
     unsigned int err = 0;
     unsigned int i = 0;
@@ -40,7 +37,7 @@ static void DeleteFiles(SIE_FILE *files) {
             }
         }
         mfree(path);
-        Update(i++);
+        Sie_GUI_BoxUpdate(BOX_GUI, GetMsg(++i));
         file = file->next;
     }
 }
@@ -48,7 +45,7 @@ static void DeleteFiles(SIE_FILE *files) {
 static void SubProc_Delete(SIE_FILE *files) {   
     DeleteFiles(files);
     Sie_FS_DestroyFiles(files);
-    Sie_GUI_CloseGUI(BOX_GUI->surface->gui_id);
+    Sie_GUI_BoxClose(BOX_GUI);
     IPC_Reload();
     BOX_GUI = NULL;
 }

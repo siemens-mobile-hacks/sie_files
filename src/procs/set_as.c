@@ -9,7 +9,7 @@ extern SIE_FILE *CURRENT_FILE;
 static SIE_GUI_BOX *BOX_GUI;
 
 void SetWallpaper_Proc() {
-    Sie_GUI_CloseGUI_GBS(BOX_GUI->surface->gui_id);
+    Sie_GUI_BoxClose(BOX_GUI);
 }
 
 static void Proc() {

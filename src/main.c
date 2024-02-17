@@ -24,7 +24,7 @@ static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
 int DEFAULT_DISK;
 char *DIR_TEMPLATES;
 
-const int minus11 = -11;
+static const int minus11 = -11;
 unsigned short maincsm_name_body[140];
 RECT canvas = {0, 0, 0, 0};
 
@@ -77,7 +77,7 @@ SIE_FILE *InitRootFiles() {
 }
 
 SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
-    static char color_hidden[] = COLOR_TEXT_DISABLED;
+    static char color_hidden[] = SIE_COLOR_TEXT_DISABLED;
 
     SIE_MENU_LIST_ITEM *items = NULL;
 
@@ -140,14 +140,16 @@ inline char GetAttr(int attr, char c) {
 
 void UpdateHeader() {
     if (CURRENT_FILE) {
-        wsprintf(SURFACE->hdr_ws, "%c%c%c%c\t%d/%d",
+        char hdr[32];
+        sprintf(hdr, "%c%c%c%c\t%d/%d",
                  GetAttr(SIE_FS_FA_READONLY, 'r'),
                  GetAttr(SIE_FS_FA_HIDDEN, 'h'),
                  GetAttr(SIE_FS_FA_SYSTEM, 's'),
                  GetAttr(SIE_FS_FA_DIRECTORY, 'd'),
                  MENU->row + 1, MENU->n_items);
+        Sie_GUI_Surface_SetHeader(SURFACE, hdr);
     } else {
-        wsprintf(SURFACE->hdr_ws, "");
+        Sie_GUI_Surface_SetHeader(SURFACE, "");
     }
 }
 
@@ -210,7 +212,7 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     }
     Sie_Menu_List_Refresh(MENU);
     SetCurrentFile(FILES, MENU->row);
-    UpdateHeader(data);
+    UpdateHeader();
 }
 
 /**********************************************************************************************************************/
@@ -223,7 +225,7 @@ static void OnRedraw(MAIN_GUI *data) {
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
     PATH_STACK = InitPathStack();
     ChangeDir(data, "");
-    UpdateHeader(data);
+    UpdateHeader();
     data->gui.state = 1;
 }
 
@@ -407,17 +409,24 @@ static int maincsm_onmessage(CSM_RAM *data, GBS_MSG *msg) {
         if (strcmp(ipc->name_to, IPC_NAME) == 0) {
             if (msg->submess == IPC_RELOAD) {
                 Reload(csm->main_gui);
-            } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME_WS) {
-                unsigned int row = 0, err = 0;
-                ChangeDir(csm->main_gui, ".");
-                row = Sie_Menu_List_GetRowByName_ws(MENU, ipc->data, &err);
-                if (!err) {
-                    PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
-                    Sie_Menu_List_Refresh(MENU);
-                    DirectRedrawGUI_ID(SURFACE->gui_id);
+            } else if (msg->submess == IPC_SET_ROW_BY_FILE_NAME) {
+                IPC_DATA *data = ipc->data;
+                if (data->gui_id == SURFACE->gui_id) {
+                    unsigned int row, err = 0;
+                    const char *file_name = (const char*)data->data;
+                    size_t len = strlen(file_name);
+                    WSHDR *ws = AllocWS(len);
+                    str_2ws(ws, file_name, len);
+                    ChangeDir(csm->main_gui, ".");
+                    row = Sie_Menu_List_GetRowByName_ws(MENU, ws, &err);
+                    FreeWS(ws);
+                    if (!err) {
+                        PATH_STACK->row = Sie_Menu_List_SetRow(MENU, row);
+                        Sie_Menu_List_Refresh(MENU);
+                        DirectRedrawGUI_ID(SURFACE->gui_id);
+                        SetCurrentFile(FILES, row);
+                    }
                 }
-                SetCurrentFile(FILES, row);
-                FreeWS(ipc->data);
             }
         }
     }
