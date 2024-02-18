@@ -19,6 +19,7 @@ typedef struct {
 
 
 static int _OnKey(MAIN_GUI *data, GUI_MSG *msg);
+void UpdateCSMname();
 
 /**********************************************************************************************************************/
 int DEFAULT_DISK;
@@ -213,6 +214,9 @@ void ChangeDir(MAIN_GUI *data, const char *path) {
     Sie_Menu_List_Refresh(MENU);
     SetCurrentFile(FILES, MENU->row);
     UpdateHeader();
+    LockSched();
+    UpdateCSMname();
+    UnlockSched();
 }
 
 /**********************************************************************************************************************/
@@ -223,7 +227,6 @@ static void OnRedraw(MAIN_GUI *data) {
 }
 
 static void OnCreate(MAIN_GUI *data, void *(*malloc_adr)(int)) {
-    PATH_STACK = InitPathStack();
     ChangeDir(data, "");
     UpdateHeader();
     data->gui.state = 1;
@@ -461,8 +464,20 @@ static const struct {
         }
 };
 
-void UpdateCSMname(void) {
-    wsprintf((WSHDR *)&MAINCSM.maincsm_name, "%t", MAIN_CSM_NAME);
+void UpdateCSMname() {
+    WSHDR *maincsm_name_ws = (WSHDR *)&MAINCSM.maincsm_name;
+    wsprintf(maincsm_name_ws, "%t", MAIN_CSM_NAME);
+    size_t len = strlen(PATH_STACK->dir_name);
+    if (len) {
+        WSHDR *ws1 = AllocWS(8);
+        WSHDR *ws2 = AllocWS(len);
+        wsprintf(ws1, "%s", " - ");
+        str_2ws(ws2, PATH_STACK->dir_name, len);
+        wstrcat(maincsm_name_ws, ws1);
+        wstrcat(maincsm_name_ws, ws2);
+        FreeWS(ws1);
+        FreeWS(ws2);
+    }
 }
 
 #pragma GCC diagnostic push
@@ -471,6 +486,7 @@ void UpdateCSMname(void) {
 int main(const char *exename, const char *fname) {
     MAIN_CSM main_csm;
     sscanf(exename, "%d:\\", &DEFAULT_DISK);
+    PATH_STACK = InitPathStack();
     LockSched();
     UpdateCSMname();
     CreateCSM(&MAINCSM.maincsm, &main_csm, 0);
