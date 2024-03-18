@@ -1,5 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sie/sie.h>
 #include "view.h"
 #include "create.h"
@@ -43,12 +44,12 @@ void AddSelectItems(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     Sie_Menu_List_AddItem(menu, item, "Select all");
 }
 
-inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+static inline void AddMenuOperations(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     item->proc = CreateMenuOperations;
     Sie_Menu_List_AddItem(menu, item, "Operations");
 }
 
-inline void AddMenuView(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
+static inline void AddMenuView(SIE_MENU_LIST *menu, SIE_MENU_LIST_ITEM *item) {
     item->proc = CreateMenuView;
     Sie_Menu_List_AddItem(menu, item, "View");
 }

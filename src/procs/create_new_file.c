@@ -1,5 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sie/sie.h>
 #include "../ipc.h"
 #include "../msg.h"

@@ -1,6 +1,7 @@
 #include <swilib.h>
+#include <swilib/nucleus.h>
 #include <stdlib.h>
-#include <nu_swilib.h>
+#include <string.h>
 #include <sie/sie.h>
 #include "../ipc.h"
 #include "../msg.h"
