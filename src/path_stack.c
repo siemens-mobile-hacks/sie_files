@@ -1,5 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
+#include <string.h>
 #include "path_stack.h"
 
 path_stack_t *InitPathStack(void) {

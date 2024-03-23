@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "msg.h"
 
 extern SIE_GUI_SURFACE *SURFACE;

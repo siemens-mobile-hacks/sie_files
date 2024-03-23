@@ -1,5 +1,6 @@
 #include <swilib.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sie/sie.h>
 #include "ipc.h"
 #include "path_stack.h"
@@ -135,7 +136,7 @@ SIE_MENU_LIST_ITEM *InitItems(SIE_FILE *top, unsigned int *count) {
     return items;
 };
 
-inline char GetAttr(int attr, char c) {
+static inline char GetAttr(int attr, char c) {
     return (CURRENT_FILE->file_attr & attr) ? c : '-';
 }
 

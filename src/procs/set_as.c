@@ -1,5 +1,6 @@
 #include <swilib.h>
-#include <nu_swilib.h>
+#include <swilib/nucleus.h>
+#include <string.h>
 #include <sie/sie.h>
 #include "../helpers.h"
 
